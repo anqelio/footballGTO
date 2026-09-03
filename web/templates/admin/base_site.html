@@ -1,0 +1,247 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<div id="site-name" style="display:flex;align-items:center;gap:12px;">
+    <span style="font-size:28px;">⚽</span>
+    <a href="{% url 'admin:index' %}" style="font-size:24px;font-weight:700;color:white;text-decoration:none;">
+        {{ site_header|default:_('Django administration') }}
+    </a>
+</div>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    /* Основные стили */
+    * {
+        box-sizing: border-box;
+    }
+    
+    #header {
+        background: linear-gradient(135deg, #1e3a8a, #1e40af, #2563eb) !important;
+        padding: 12px 40px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3) !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 1000 !important;
+    }
+    
+    #branding h1 {
+        color: white !important;
+        font-size: 24px !important;
+        font-weight: bold !important;
+        margin: 0 !important;
+    }
+    
+    #branding h1 a {
+        color: white !important;
+        text-decoration: none !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+    }
+    
+    #user-tools {
+        color: #bfdbfe !important;
+        font-size: 14px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 15px !important;
+    }
+    
+    #user-tools a {
+        color: white !important;
+        border-bottom: 1px solid transparent !important;
+        transition: border-color 0.2s !important;
+        padding: 4px 0 !important;
+    }
+    
+    #user-tools a:hover {
+        border-bottom-color: white !important;
+    }
+    
+    /* Модули */
+    .module h2, .module caption, .inline-group h2 {
+        background: linear-gradient(135deg, #1e40af, #2563eb) !important;
+        color: white !important;
+        padding: 10px 15px !important;
+    }
+    
+    .module caption a {
+        color: white !important;
+    }
+    
+    /* Кнопки */
+    .button, input[type=submit], input[type=button], .submit-row input, a.button {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 8px 20px !important;
+        font-weight: 500 !important;
+        transition: all 0.2s !important;
+    }
+    
+    .button:hover, input[type=submit]:hover, input[type=button]:hover {
+        background: linear-gradient(135deg, #1d4ed8, #1e40af) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4) !important;
+    }
+    
+    .button.default {
+        background: linear-gradient(135deg, #16a34a, #15803d) !important;
+    }
+    
+    .button.default:hover {
+        background: linear-gradient(135deg, #15803d, #166534) !important;
+        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4) !important;
+    }
+    
+    .object-tools a {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+        border-radius: 8px !important;
+        padding: 6px 16px !important;
+    }
+    
+    .object-tools a:hover {
+        background: linear-gradient(135deg, #1d4ed8, #1e40af) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+    }
+    
+    /* Селекторы */
+    .selector-chosen h2 {
+        background: linear-gradient(135deg, #1e40af, #2563eb) !important;
+        color: white !important;
+    }
+    
+    /* Дашборд */
+    .dashboard #content {
+        width: 100% !important;
+        max-width: 1400px !important;
+        margin: 0 auto !important;
+        padding: 20px !important;
+    }
+    
+    .dashboard .module table {
+        width: 100% !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+    }
+    
+    .dashboard .module table th {
+        background: #f1f5f9 !important;
+        color: #1e293b !important;
+        font-weight: 600 !important;
+        padding: 12px 15px !important;
+    }
+    
+    .dashboard .module table td {
+        padding: 10px 15px !important;
+    }
+    
+    .dashboard .module table td a {
+        color: #2563eb !important;
+        font-weight: 500 !important;
+        transition: color 0.2s !important;
+    }
+    
+    .dashboard .module table td a:hover {
+        color: #1d4ed8 !important;
+        text-decoration: underline !important;
+    }
+    
+    /* Кастомные карточки статистики */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 18px 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    
+    .stat-card .stat-icon {
+        font-size: 24px;
+        margin-bottom: 6px;
+    }
+    
+    .stat-card .stat-label {
+        font-size: 12px;
+        color: #6b7280;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2937;
+        margin-top: 2px;
+    }
+    
+    /* Бейджи статусов */
+    .status-badge {
+        display: inline-block;
+        padding: 2px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        color: white;
+    }
+    
+    .status-badge-new { background: #2563eb; }
+    .status-badge-processed { background: #16a34a; }
+    .status-badge-canceled { background: #dc2626; }
+    .status-badge-read { background: #6b7280; }
+    .status-badge-replied { background: #16a34a; }
+    
+    /* Адаптив */
+    @media (max-width: 768px) {
+        #header {
+            padding: 10px 16px !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+        }
+        
+        #branding h1 {
+            font-size: 18px !important;
+        }
+        
+        #user-tools {
+            font-size: 12px !important;
+            flex-wrap: wrap !important;
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+            gap: 10px !important;
+        }
+        
+        .stat-card .stat-value {
+            font-size: 22px !important;
+        }
+    }
+</style>
+{% endblock %}
