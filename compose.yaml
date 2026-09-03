@@ -1,0 +1,80 @@
+networks:
+  internal:
+    ipam:
+      driver: default
+      config:
+        - subnet: ${SUBNET}
+# Общее для всех контейнеров - указываем сеть internal, env_file: .env и правила для логирования
+x-container:
+  &base-container
+  networks:
+    - internal
+  env_file:
+    - .env
+  logging:
+    options:
+      max-size: "5m"
+      max-file: "2"
+
+services:
+  nginx:
+    <<: *base-container
+    image: gto-nginx:1.0.0-nginx1.31.4-alpine3.24-slim
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+      args:
+        LOCAL_USER_ID_ARG: ${LOCAL_USER_ID}
+        LOCAL_GROUP_ID_ARG: ${LOCAL_GROUP_ID}
+    depends_on:
+      - web
+      - api
+    ports:
+      - 443:443
+      - 80:80
+    volumes:
+      - ./docker/nginx/config/default.conf:/etc/nginx/templates/default.conf.template:ro
+      - ./web/staticfiles:/var/www/static:ro
+    command: ["nginx", '-g', 'daemon off;']
+  api:
+    <<: *base-container
+    image: gto-api:1.0.0-python3.14.7-slim-trixie
+    build:
+      context: ./api
+      dockerfile: ../docker/python/Dockerfile
+      args:
+        LOCAL_USER_ID_ARG: ${LOCAL_USER_ID}
+        LOCAL_GROUP_ID_ARG: ${LOCAL_GROUP_ID}
+    command:
+      ["uvicorn", "app.main:main_app", "--host", "0.0.0.0", "--port", "8000"]
+    depends_on:
+      db:
+        condition: service_healthy
+  web:
+    <<: *base-container
+    image: gto-web:1.0.0-python3.14.7-slim-trixie
+    build:
+      context: ./web
+      dockerfile: ../docker/python/Dockerfile
+      args:
+        LOCAL_USER_ID_ARG: ${LOCAL_USER_ID}
+        LOCAL_GROUP_ID_ARG: ${LOCAL_GROUP_ID}
+    volumes:
+      - ./web/staticfiles:/app/staticfiles:rw
+    command:
+      ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    <<: *base-container
+    image: postgres:18.6-alpine3.24
+    volumes:
+      - ./docker/postgresql/data:/var/lib/postgresql:rw
+    command: ["postgres", "-p", "${POSTGRES_PORT}", "-c", "timezone=${TZ}", "-c", "log_timezone=${TZ}"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p $${POSTGRES_PORT} -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s

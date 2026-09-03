@@ -1,0 +1,11 @@
+services:
+  db:
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    command: [
+      "postgres",
+      "-p", "${POSTGRES_PORT}",
+      "-c", "log_statement=all",
+      "-c", "timezone=${TZ}",
+      "-c", "log_timezone=${TZ}"
+    ]
