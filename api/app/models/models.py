@@ -32,7 +32,11 @@ class Player(SQLModel, table=True):
     gender: Optional[str] = Field(max_length=10, default=None, regex="^(male|female)$")
     preferred_foot: Optional[str] = Field(max_length=10, default=None, regex="^(left|right)$")
     club_id: Optional[int] = Field(default=None, foreign_key="clubs.id", ondelete="SET NULL")
+<<<<<<< HEAD
     created_at: Optional[datetime]
+=======
+    created_at: Optional[datetime] = Field(default=None, sa_column_kwargs={"server_default": "CURRENT_TIMESTAMP"})
+>>>>>>> 70e5a171c77834e623fba9788ad83fff61a3afcd
     photo_url: Optional[str] = Field(default=None, max_length=500)
     
     # Связи
@@ -103,7 +107,11 @@ class Application(SQLModel, table=True):
     child_name: str = Field(max_length=100, nullable=False)
     child_age: Optional[int] = Field(default=None)
     club_name: Optional[str] = Field(max_length=100, default=None)
+<<<<<<< HEAD
     created_at: Optional[datetime]
+=======
+    created_at: Optional[datetime] = Field(default=None, sa_column_kwargs={"server_default": "CURRENT_TIMESTAMP"})
+>>>>>>> 70e5a171c77834e623fba9788ad83fff61a3afcd
     status: Optional[str] = Field(default="new", max_length=20)
     
     

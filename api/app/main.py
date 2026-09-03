@@ -16,21 +16,35 @@ from app.api.router_feedback import router as router_feedback
 from app.api.router_rankings import router as router_rankings
 from fastapi.middleware.cors import CORSMiddleware
 
+<<<<<<< HEAD
 @asynccontextmanager
 async def main_lifespan(app: FastAPI):
+=======
+main_app = FastAPI()
+
+@asynccontextmanager
+async def on_startup(app: FastAPI):
+>>>>>>> 70e5a171c77834e623fba9788ad83fff61a3afcd
     init_db()
     yield
     close_db()
 
+<<<<<<< HEAD
 main_app = FastAPI(lifespan=main_lifespan)
 
+=======
+>>>>>>> 70e5a171c77834e623fba9788ad83fff61a3afcd
 app_v1 = FastAPI(
     title="footballGTO API, Приложение, предназначенное для обработки данных о тестируемых футболистах.", version="1.0.0",
     openapi_url="/openapi.json", docs_url="/docs",
     redoc_url="/redoc",
     description='Выполнил tg: @cyberrobb',
     swagger_ui_oauth2_redirect_url="/docs/oauth2-redirect",
+<<<<<<< HEAD
     lifespan=main_lifespan)
+=======
+    lifespan=on_startup)
+>>>>>>> 70e5a171c77834e623fba9788ad83fff61a3afcd
 
 main_app.mount("/api/v1/", app_v1)
 app_v1.add_middleware(
