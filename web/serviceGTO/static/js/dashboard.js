@@ -6,21 +6,21 @@ function getAuthHeaders() {
 }
 
 async function fetchApplications() {
-    const res = await fetch(`${API_BASE}/applications?size=50`, { headers: getAuthHeaders() });
+    const res = await fetch(`${API_BASE}/applications/?size=50`, { headers: getAuthHeaders() });
     const data = await res.json();
     const apps = data.items || [];
     document.getElementById('applicationsList').innerHTML = apps.map(a => `<div class="border-b py-2">${a.parent_name} (${a.parent_phone}) - ребёнок ${a.child_name} (${a.child_age}) - статус: ${a.status}</div>`).join('');
 }
 
 async function fetchPlayers() {
-    const res = await fetch(`${API_BASE}/players?size=100`, { headers: getAuthHeaders() });
+    const res = await fetch(`${API_BASE}/players/?size=100`, { headers: getAuthHeaders() });
     const data = await res.json();
     const players = data.items || [];
     document.getElementById('playersList').innerHTML = players.map(p => `<div>${p.first_name} ${p.last_name} (${p.club?.name || 'без клуба'})</div>`).join('');
 }
 
 async function loadTestOptions() {
-    const res = await fetch(`${API_BASE}/tests?size=100`, { headers: getAuthHeaders() });
+    const res = await fetch(`${API_BASE}/tests/?size=100`, { headers: getAuthHeaders() });
     const data = await res.json();
     const tests = data.items || [];
     const select = document.getElementById('testSelect');
@@ -36,7 +36,7 @@ document.getElementById('resultForm')?.addEventListener('submit', async (e) => {
         value: parseFloat(document.getElementById('testValue').value),
         notes: document.getElementById('testNotes').value
     };
-    const res = await fetch(`${API_BASE}/results`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
+    const res = await fetch(`${API_BASE}/results/`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
     if (res.ok) alert('Результат сохранён');
     else alert('Ошибка');
 });

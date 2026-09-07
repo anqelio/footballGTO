@@ -5,7 +5,7 @@ let currentFilters = { search: '', club: 'all', age: 'all', gender: 'all', sort:
 let selectedPlayers = [];
 
 async function fetchClubs() {
-    const res = await fetch(`${API_BASE}/clubs?size=100`);
+    const res = await fetch(`${API_BASE}/clubs/?size=100`);
     const data = await res.json();
     const clubs = data.items || [];
     const select = document.getElementById('clubFilter');

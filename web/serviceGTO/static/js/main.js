@@ -15,7 +15,7 @@ async function loadStats() {
         document.getElementById('statParticipants').innerText = totalPlayers;
 
         // Клубы – используем пагинированный ответ
-        const clubsRes = await fetch(`${API_BASE}/clubs?page=1&size=100`);
+        const clubsRes = await fetch(`${API_BASE}/clubs/?page=1&size=100`);
         const clubsData = await clubsRes.json();
         const clubsCount = clubsData.total || clubsData.items?.length || 0;
         document.getElementById('statClubs').innerText = clubsCount;
@@ -59,7 +59,7 @@ async function loadTopPlayers(ageGroup = 'U9') {
 // --- Загрузка мероприятий ---
 async function loadEvents() {
     try {
-        const res = await fetch(`${API_BASE}/events?size=6`);
+        const res = await fetch(`${API_BASE}/events/?size=6`);
         const data = await res.json();
         const events = data.items || [];
         const grid = document.getElementById('eventsGrid');
@@ -90,7 +90,7 @@ async function submitRegistration(formData) {
         child_age: parseInt(formData.get('child_age')) || null,
         club_name: formData.get('club_name') || null
     };
-    const res = await fetch(`${API_BASE}/applications`, {
+    const res = await fetch(`${API_BASE}/applications/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -107,7 +107,7 @@ async function submitFeedback(formData) {
         email: formData.get('email') || null,
         message: formData.get('message')
     };
-    const res = await fetch(`${API_BASE}/feedback`, {
+    const res = await fetch(`${API_BASE}/feedback/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
