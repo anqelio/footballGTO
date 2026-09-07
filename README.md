@@ -33,9 +33,13 @@
    где `gto.ekb.football.test` — домен, указанный в `.env` в переменной `APP_DOMAIN`.
 4. Соберите и запустите контейнеры:
    ```shell
-   docker compose up -d
+   docker compose -f compose.yaml -f compose.local.yaml up -d
    ```
 5. Собираем статику
    ```shell
    docker compose exec web python manage.py collectstatic --noinput
    ```
+## Остановка проекта
+```shell
+docker compose -f compose.yaml -f compose.local.yaml down
+```
