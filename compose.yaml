@@ -47,11 +47,6 @@ services:
         LOCAL_GROUP_ID_ARG: ${LOCAL_GROUP_ID}
     command:
       ["uvicorn", "app.main:main_app", "--host", "0.0.0.0", "--port", "8000"]
-<<<<<<< HEAD
-    volumes:
-      - ./api:/app
-=======
->>>>>>> 70e5a171c77834e623fba9788ad83fff61a3afcd
     depends_on:
       db:
         condition: service_healthy
@@ -66,10 +61,6 @@ services:
         LOCAL_GROUP_ID_ARG: ${LOCAL_GROUP_ID}
     volumes:
       - ./web/staticfiles:/app/staticfiles:rw
-<<<<<<< HEAD
-      - ./web:/app
-=======
->>>>>>> 70e5a171c77834e623fba9788ad83fff61a3afcd
     command:
       ["python", "manage.py", "runserver", "0.0.0.0:8000"]
     depends_on:

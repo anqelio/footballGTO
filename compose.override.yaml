@@ -1,4 +1,10 @@
 services:
+  api:
+    volumes:
+      - ./api:/app
+  web:
+    volumes:
+      - ./web:/app
   db:
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"

@@ -48,21 +48,13 @@
     <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
         <div class="container mx-auto px-4">
             <div class="flex items-center justify-between h-20">
-<<<<<<< HEAD
-                <a href="/index" class="flex items-center gap-3">
-=======
-                <a href="/web/serviceGTO/static" class="flex items-center gap-3">
->>>>>>> 70e5a171c77834e623fba9788ad83fff61a3afcd
+                <a href="{% url 'index' %}" class="flex items-center gap-3">
                     <div class="logo-header">
                         <img src="{% static 'img/logo-new.svg' %}" alt="logo" width="200px">
                     </div>
                 </a>
                 <nav class="hidden md:flex items-center gap-8">
-<<<<<<< HEAD
-                    <a href="" class="text-gray-700 hover:text-blue-600">Главная</a>
-=======
-                    <a href="/web/serviceGTO/static" class="text-gray-700 hover:text-blue-600">Главная</a>
->>>>>>> 70e5a171c77834e623fba9788ad83fff61a3afcd
+                    <a href="{% url 'index' %}" class="text-gray-700 hover:text-blue-600">Главная</a>
                     <a href="/results" class="text-gray-700 hover:text-blue-600">Результаты</a>
                     <a href="#about" class="text-gray-700 hover:text-blue-600">О проекте</a>
                     <a href="#advantages" class="text-gray-700 hover:text-blue-600">Преимущества</a>

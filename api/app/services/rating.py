@@ -190,31 +190,22 @@ def compute_player_ratings(
                 continue
 
             is_lower_better = test.unit and ('сек' in test.unit.lower() or 'sec' in test.unit.lower())
-<<<<<<< HEAD
+
             if player_val == 0:
                 continue
-=======
->>>>>>> 70e5a171c77834e623fba9788ad83fff61a3afcd
+
             if is_lower_better:
                 min_val = min(group_vals)
                 if min_val == 0:
                     score = Decimal(0)
                 else:
-<<<<<<< HEAD
                     score = Decimal(100) * min_val / player_val if min_val != 0 else Decimal(0)
-=======
-                    score = Decimal(100) * min_val / player_val
->>>>>>> 70e5a171c77834e623fba9788ad83fff61a3afcd
             else:
                 max_val = max(group_vals)
                 if max_val == 0:
                     score = Decimal(0)
                 else:
-<<<<<<< HEAD
                     score = Decimal(100) * player_val / max_val if max_val != 0 else Decimal(0)
-=======
-                    score = Decimal(100) * player_val / max_val
->>>>>>> 70e5a171c77834e623fba9788ad83fff61a3afcd
 
             weighted = score * test.weight
             section_score += weighted
