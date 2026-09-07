@@ -1,9 +1,7 @@
 networks:
   internal:
-    ipam:
-      driver: default
-      config:
-        - subnet: ${SUBNET}
+    external: true
+    name: football-network
 # Общее для всех контейнеров - указываем сеть internal, env_file: .env и правила для логирования
 x-container:
   &base-container

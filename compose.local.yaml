@@ -1,7 +1,41 @@
+networks:
+  internal:
+    external: false
+    name: !reset null
+    ipam:
+      driver: default
+      config:
+        - subnet: ${SUBNET}
 volumes:
   postgres-data:
     name: football-postgres-data
 services:
+  nginx:
+    networks:
+      - internal
+    env_file:
+      - .env
+    logging:
+      options:
+        max-size: "5m"
+        max-file: "2"
+    image: gto-nginx:1.0.0-nginx1.31.4-alpine3.24-slim
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+      args:
+        LOCAL_USER_ID_ARG: ${LOCAL_USER_ID}
+        LOCAL_GROUP_ID_ARG: ${LOCAL_GROUP_ID}
+    depends_on:
+      - web
+      - api
+    ports:
+      - 443:443
+      - 80:80
+    volumes:
+      - ./docker/nginx/config/default.conf:/etc/nginx/templates/default.conf.template:ro
+      - ./web/staticfiles:/var/www/static:ro
+    command: ["nginx", "-g", "daemon off;"]
   api:
     volumes:
       - ./api:/app
