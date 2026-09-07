@@ -9,16 +9,20 @@ networks:
 volumes:
   postgres-data:
     name: football-postgres-data
+# Общее для всех контейнеров - указываем сеть internal, env_file: .env и правила для логирования
+x-container:
+  &base-container
+  networks:
+    - internal
+  env_file:
+    - .env
+  logging:
+    options:
+      max-size: "5m"
+      max-file: "2"
 services:
   nginx:
-    networks:
-      - internal
-    env_file:
-      - .env
-    logging:
-      options:
-        max-size: "5m"
-        max-file: "2"
+    <<: *base-container
     image: gto-nginx:1.0.0-nginx1.31.4-alpine3.24-slim
     build:
       context: ./docker/nginx
@@ -34,7 +38,6 @@ services:
       - 80:80
     volumes:
       - ./docker/nginx/config/default.conf:/etc/nginx/templates/default.conf.template:ro
-      - ./web/staticfiles:/var/www/static:ro
     command: ["nginx", "-g", "daemon off;"]
   api:
     volumes:
@@ -43,20 +46,13 @@ services:
       db:
         condition: service_healthy
   web:
-    volumes:
+    volumes: !override
       - ./web:/app
     depends_on:
       db:
         condition: service_healthy
   db:
-    networks:
-      - internal
-    env_file:
-      - .env
-    logging:
-      options:
-        max-size: "5m"
-        max-file: "2"
+    <<: *base-container
     image: postgres:18.6-alpine3.24
     volumes:
       - postgres-data:/var/lib/postgresql
