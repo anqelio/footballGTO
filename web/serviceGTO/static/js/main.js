@@ -74,7 +74,7 @@ async function loadEvents() {
                     </div>
                     <h3 class="font-bold text-lg mt-2">${ev.title}</h3>
                     <p class="text-gray-600 mt-1">${ev.description?.substring(0, 100)}</p>
-                    <button class="mt-3 text-blue-600 font-medium">Смотреть галерею →</button>
+                    <button onclick="window.location.href='${ev.video_url}' class="mt-3 text-blue-600 font-medium">Смотреть галерею →</button>
                 </div>
             </div>
         `).join('');
