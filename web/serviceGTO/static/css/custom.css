@@ -1406,6 +1406,13 @@ body {
     box-shadow: 0 20px 25px -12px rgba(0,0,0,0.15);
 }
 
+.video-modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; }
+.video-modal.hidden { display: none; }
+.video-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.8); }
+.video-modal__content { position: relative; z-index: 1; width: 70vw; max-width: 70vw; }
+.video-modal__content video { width: 100%; height: auto; display: block; border-radius: .75rem; }
+.video-modal__close { position: absolute; top: -2.5rem; right: 0; color: #fff; }
+
 .pulse-slow {
     animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite;
 }

@@ -123,6 +123,35 @@ document.addEventListener('DOMContentLoaded', () => {
     loadEvents();
     loadTopPlayers('U9');
 
+    const videoModal = document.getElementById('videoModal');
+    const openVideoBtn = document.getElementById('openVideoModal');
+    const video = document.getElementById('videoGTO');
+
+    function openVideo() {
+        videoModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        video.play().catch(() => {});
+    }
+
+    function closeVideo() {
+        videoModal.classList.add('hidden');
+        document.body.style.overflow = '';
+        video.pause();
+        video.currentTime = 0;
+    }
+
+    openVideoBtn?.addEventListener('click', openVideo);
+
+    videoModal?.querySelectorAll('[data-close-video]').forEach(el => {
+        el.addEventListener('click', closeVideo);
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !videoModal.classList.contains('hidden')) {
+            closeVideo();
+        }
+    });
+
     // Переключение возрастных групп в рейтинге
     document.querySelectorAll('.age-tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
