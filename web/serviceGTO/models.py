@@ -125,8 +125,6 @@ class Feedback(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, default='new')
-    # Добавляем поле is_read для совместимости с шаблоном (можно вычислять из status)
-    is_read = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'feedback'
