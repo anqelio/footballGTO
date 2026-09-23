@@ -123,6 +123,50 @@ document.addEventListener('DOMContentLoaded', () => {
     loadEvents();
     loadTopPlayers('U9');
 
+    const aboutSliderEl = document.querySelector('.about-slider');
+    if (aboutSliderEl) {
+        const AUTOPLAY_MS = 5000;
+        const progressBar = aboutSliderEl.querySelector('.about-slider-progress span');
+
+        const aboutSwiper = new Swiper('.about-slider', {
+            loop: true,
+            speed: 900,
+            effect: 'fade',
+            fadeEffect: { crossFade: true },
+            autoplay: {
+                delay: AUTOPLAY_MS,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true,
+            },
+            pagination: {
+                el: '.about-slider .swiper-pagination',
+                clickable: true,
+            },
+            navigation: {
+                nextEl: '.about-slider .swiper-button-next',
+                prevEl: '.about-slider .swiper-button-prev',
+            },
+            on: {
+                init() {
+                    restartProgress();
+                },
+                slideChangeTransitionStart() {
+                    restartProgress();
+                },
+            },
+        });
+
+        function restartProgress() {
+            if (!progressBar) return;
+            progressBar.style.transition = 'none';
+            progressBar.style.width = '0%';
+            // force reflow
+            void progressBar.offsetWidth;
+            progressBar.style.transition = `width ${AUTOPLAY_MS}ms linear`;
+            progressBar.style.width = '100%';
+        }
+    }
+
     const videoModal = document.getElementById('videoModal');
     const openVideoBtn = document.getElementById('openVideoModal');
     const video = document.getElementById('videoGTO');
