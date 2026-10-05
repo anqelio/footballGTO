@@ -5,9 +5,9 @@ from fastapi import HTTPException, status
 from jose import jwt, JWTError
 
 load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("access_token_expire_minutes")
+SECRET_KEY = 'anqelio'
+ALGORITHM = 'HS256'
+ACCESS_TOKEN_EXPIRE_MINUTES = '30'
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None):

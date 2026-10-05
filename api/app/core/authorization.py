@@ -8,8 +8,8 @@ from app.models.models import User
 from app.db.session import get_session
 
 load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
+SECRET_KEY = 'anqelio'
+ALGORITHM = 'HS256'
 
 security = HTTPBearer()
 
