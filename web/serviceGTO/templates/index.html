@@ -5,295 +5,426 @@
     <meta charset="UTF-8">
     <link rel="icon" href="{% static 'img/logo-new.svg' %}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Футбольное ГТО - Уральский Футбольный Союз</title>
-    <!-- Tailwind CSS -->
+    <title>Футбольное ГТО — Уральский Футбольный Союз</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2/dist/tailwind.min.css" rel="stylesheet">
-    <!-- Swiper для каруселей -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-    <!-- AOS Animation -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <!-- Кастомные стили -->
     <link rel="stylesheet" href="{% static 'css/custom.css' %}">
     <style>
-        .hero-gradient {
-            background: linear-gradient(135deg, rgba(30,58,138,0.92) 0%, rgba(127,29,29,0.88) 100%);
+        :root{
+            --ink:#0b1220;
+            --ink-2:#1f2937;
+            --muted:#6b7280;
+            --line:#e5e7eb;
+            --line-2:#f1f5f9;
+            --red:#d91e2b;
+            --red-dark:#b8161f;
+            --navy:#0f2a5c;
+            --paper:#f7f7f5;
         }
-        .btn-gradient {
-            background: linear-gradient(135deg, #2563eb, #1e40af);
-            transition: all 0.3s ease;
-        }
-        .btn-gradient:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px -5px rgba(37,99,235,0.4);
-        }
-        .card-hover {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .card-hover:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -12px rgba(0,0,0,0.15);
-        }
-        .pulse-slow {
-            animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite;
-        }
-        @keyframes pulse {
-            0%,100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+        html{scroll-behavior:smooth}
+        body{font-family:'SF-Pro',system-ui,-apple-system,sans-serif;color:var(--ink);background:#fff;-webkit-font-smoothing:antialiased}
+        .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;color:var(--red)}
+        .eyebrow-light{color:rgba(255,255,255,.65)}
+        .tnum{font-variant-numeric:tabular-nums}
+        .btn{display:inline-flex;align-items:center;gap:.5rem;border-radius:3px;font-weight:600;font-size:15px;letter-spacing:.01em;padding:.85rem 1.35rem;transition:background .15s,color .15s,border-color .15s,transform .15s;border:1px solid transparent}
+        .btn-red{background:var(--red);color:#fff}
+        .btn-red:hover{background:var(--red-dark)}
+        .btn-ink{background:var(--ink);color:#fff}
+        .btn-ink:hover{background:#000}
+        .btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
+        .btn-ghost:hover{background:rgba(255,255,255,.08);border-color:#fff}
+        .btn-outline{background:#fff;color:var(--ink);border-color:var(--ink)}
+        .btn-outline:hover{background:var(--ink);color:#fff}
+        .hero-mask{background:linear-gradient(180deg,rgba(8,12,22,.35) 0%,rgba(8,12,22,.78) 100%)}
+        .nav-link{position:relative;color:var(--ink-2);font-size:15px}
+        .nav-link:hover{color:var(--red)}
+        .rule{height:1px;background:var(--line)}
+        .accent-rule{width:36px;height:3px;background:var(--red)}
+        .grid-lines{display:grid;gap:1px;background:var(--line);border:1px solid var(--line)}
+        .grid-lines > *{background:#fff}
+        .adv-card{transition:background .15s}
+        .adv-card:hover{background:var(--line-2)}
+        .adv-card svg{width:28px;height:28px;color:var(--red)}
+        .input{width:100%;padding:.85rem 1rem;border:1px solid var(--line);border-radius:3px;background:#fff;font-size:15px;transition:border-color .15s}
+        .input:focus{outline:none;border-color:var(--ink)}
+        .tag-age{font-size:13px;padding:.5rem 1rem;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--ink-2);font-weight:500;transition:all .15s}
+        .tag-age:hover{border-color:var(--ink)}
+        .tag-age.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+        .stat-num{font-size:44px;font-weight:700;line-height:1;letter-spacing:-.02em}
+        @media(min-width:768px){.stat-num{font-size:56px}}
+        .section{padding:96px 0}
+        .section-paper{background:var(--paper)}
+        .kpi-strip{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(255,255,255,.15);border-bottom:1px solid rgba(255,255,255,.15)}
+        .kpi-strip > div{padding:28px 16px;border-left:1px solid rgba(255,255,255,.15)}
+        .kpi-strip > div:first-child{border-left:0}
     </style>
 </head>
-<body class="font-sans antialiased">
+<body>
 
-    <!-- Header (как в ТЗ) -->
-    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-between h-20">
-                <a href="{% url 'index' %}" class="flex items-center gap-3">
-                    <div class="logo-header">
-                        <img src="{% static 'img/logo-new.svg' %}" alt="logo" width="200px">
-                    </div>
-                </a>
-                <nav class="hidden md:flex items-center gap-8">
-                    <a href="{% url 'index' %}" class="text-gray-700 hover:text-blue-600">Главная</a>
-                    <a href="/results" class="text-gray-700 hover:text-blue-600">Результаты</a>
-                    <a href="#about" class="text-gray-700 hover:text-blue-600">О проекте</a>
-                    <a href="#advantages" class="text-gray-700 hover:text-blue-600">Преимущества</a>
-                    <a href="#rating" class="text-gray-700 hover:text-blue-600">Рейтинг</a>
-                    <a href="#events" class="text-gray-700 hover:text-blue-600">Мероприятия</a>
-                    <a href="#contact" class="text-gray-700 hover:text-blue-600">Контакты</a>
-                </nav>
-                <div class="hidden md:flex items-center gap-2 text-blue-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-                    <a href="tel:+79089008860" class="font-semibold text-gray-900 hover:text-blue-600">8 (908) 900-88-60</a>
-                </div>
-                <button id="menuToggle" class="md:hidden p-2 rounded-lg hover:bg-gray-100">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
+<!-- HEADER -->
+<header class="sticky top-0 z-50 bg-white border-b border-gray-200">
+    <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between h-20">
+            <a href="{% url 'index' %}" class="flex items-center gap-3">
+                <img src="{% static 'img/logo-new.svg' %}" alt="УФС" width="180">
+            </a>
+            <nav class="hidden lg:flex items-center gap-8">
+                <a href="{% url 'index' %}" class="nav-link">Главная</a>
+                <a href="/results" class="nav-link">Результаты</a>
+                <a href="#about" class="nav-link">О проекте</a>
+                <a href="#advantages" class="nav-link">Преимущества</a>
+                <a href="#rating" class="nav-link">Рейтинг</a>
+                <a href="#events" class="nav-link">Мероприятия</a>
+                <a href="#contact" class="nav-link">Контакты</a>
+            </nav>
+            <div class="hidden lg:flex items-center gap-5">
+                <a href="tel:+79089008860" class="text-sm font-semibold text-gray-900 tnum">8 (908) 900-88-60</a>
+                <a href="#registration-form" class="btn btn-red">Записаться</a>
             </div>
-            <div id="mobileMenu" class="hidden md:hidden py-4 border-t border-gray-200 flex flex-col gap-3">
-                <a href="{% url 'index' %}" class="text-gray-700 hover:text-blue-600">Главная</a>
-                <a href="/results" class="text-gray-700 hover:text-blue-600">Результаты</a>
-                <a href="#about" class="text-gray-700 hover:text-blue-600">О проекте</a>
-                <a href="#advantages" class="text-gray-700 hover:text-blue-600">Преимущества</a>
-                <a href="#rating" class="text-gray-700 hover:text-blue-600">Рейтинг</a>
-                <a href="#events" class="text-gray-700 hover:text-blue-600">Мероприятия</a>
-                <a href="#contact" class="text-gray-700 hover:text-blue-600">Контакты</a>
-                <a href="tel:+79089008860" class="flex items-center gap-2 text-blue-600 font-semibold">📞 8 (908) 900-88-60</a>
-            </div>
+            <button id="menuToggle" class="lg:hidden p-2 rounded hover:bg-gray-100">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
         </div>
-    </header>
+        <div id="mobileMenu" class="hidden lg:hidden py-4 border-t border-gray-200 flex flex-col gap-4">
+            <a href="{% url 'index' %}" class="nav-link">Главная</a>
+            <a href="/results" class="nav-link">Результаты</a>
+            <a href="#about" class="nav-link">О проекте</a>
+            <a href="#advantages" class="nav-link">Преимущества</a>
+            <a href="#rating" class="nav-link">Рейтинг</a>
+            <a href="#events" class="nav-link">Мероприятия</a>
+            <a href="#contact" class="nav-link">Контакты</a>
+            <div class="rule my-2"></div>
+            <a href="tel:+79089008860" class="font-semibold tnum">8 (908) 900-88-60</a>
+            <a href="#registration-form" class="btn btn-red justify-center">Записаться</a>
+        </div>
+    </div>
+</header>
 
-    <!-- Hero секция (как в ТЗ) -->
-    <section class="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
-        <div class="absolute inset-0 z-0">
-            <img src="https://images.unsplash.com/photo-1600130202712-fd01014ffa79?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920" alt="Футбольное поле" class="w-full h-full object-cover">
-            <div class="absolute inset-0 hero-gradient"></div>
-        </div>
-        <div class="relative z-10 container mx-auto px-4 text-center text-white" data-aos="fade-up">
-            <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 text-sm font-medium mb-6">
-                <span class="w-2 h-2 bg-green-400 rounded-full pulse-slow"></span>
-                <span>Первый на Урале сервис футбольного тестирования</span>
-            </div>
-            <h1 class="text-5xl md:text-7xl font-bold leading-tight">
-                PRO-футбольное<br>
-                <span class="bg-gradient-to-r from-blue-300 to-red-300 bg-clip-text text-transparent">тестирование</span>
+<!-- HERO -->
+<section class="relative min-h-[92vh] flex items-end overflow-hidden">
+    <div class="absolute inset-0 z-0">
+        <img src="https://images.unsplash.com/photo-1600130202712-fd01014ffa79?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920" alt="" class="w-full h-full object-cover">
+        <div class="absolute inset-0 hero-mask"></div>
+    </div>
+
+    <div class="relative z-10 container mx-auto px-4 pb-16 pt-40 text-white">
+        <div class="max-w-4xl">
+            <div class="eyebrow eyebrow-light mb-6">Уральский Футбольный Союз · Сезон 2026</div>
+            <h1 class="text-5xl md:text-7xl font-bold leading-[1.02] tracking-tight">
+                PRO-тестирование<br>юных футболистов
             </h1>
-            <p class="text-xl text-gray-200 max-w-2xl mx-auto mt-6 mb-10">
-                Объективная оценка навыков юных футболистов по 30+ показателям с использованием профессионального оборудования
+            <p class="text-lg md:text-xl text-gray-300 max-w-2xl mt-8">
+                Объективная оценка навыков по 30+ показателям на профессиональном оборудовании. Единая методика для тренеров, родителей и клубов.
             </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-                <a href="#registration-form" class="btn-gradient text-white px-8 py-3 rounded-lg font-semibold flex items-center gap-2 shadow-lg">
-                    Записаться на тестирование
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M19 12l-7 7-7-7"/></svg>
+            <div class="flex flex-col sm:flex-row gap-3 mt-10">
+                <a href="#registration-form" class="btn btn-red">Записаться на тестирование
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M13 5l7 7-7 7"/></svg>
                 </a>
-                <button id="openVideoModal" class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg px-6 py-3 font-semibold hover:bg-white/20 transition flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                <button id="openVideoModal" class="btn btn-ghost">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                     Смотреть видео
                 </button>
             </div>
-            <div class="grid grid-cols-3 gap-8 max-w-3xl mx-auto">
-                <div><div class="text-3xl font-bold" id="statParticipants">0</div><div class="text-gray-300">Протестировано детей</div></div>
-                <div><div class="text-3xl font-bold">30+</div><div class="text-gray-300">Показателей оценки</div></div>
-                <div><div class="text-3xl font-bold" id="statClubs">0</div><div class="text-gray-300">Футбольных школ</div></div>
-            </div>
         </div>
-        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-            <svg class="w-6 h-6 text-white/60" background-color="white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
-        </div>
-    </section>
 
-    <!-- Форма записи на тестирование (id="registration-form") -->
-    <section id="registration-form" class="py-20 bg-white">
-        <div class="container mx-auto px-4">
-            <div class="max-w-3xl mx-auto bg-gray-50 rounded-2xl shadow-xl p-8" data-aos="fade-up">
-                <h2 class="text-3xl font-bold text-center mb-6">Запись на тестирование</h2>
-                <form id="registrationForm" class="space-y-5">
-                    <div class="grid md:grid-cols-2 gap-5">
-                        <div><input type="text" name="parent_name" placeholder="Фамилия и имя родителя *" required class="w-full p-3 border rounded-lg"></div>
-                        <div><input type="tel" name="parent_phone" placeholder="Телефон *" required class="w-full p-3 border rounded-lg"></div>
-                        <div><input type="text" name="child_name" placeholder="Имя ребёнка *" required class="w-full p-3 border rounded-lg"></div>
-                        <div><input type="number" name="child_age" placeholder="Возраст ребёнка" class="w-full p-3 border rounded-lg"></div>
-                        <div class="md:col-span-2"><input type="text" name="club_name" placeholder="Название футбольного клуба (необязательно)" class="w-full p-3 border rounded-lg"></div>
-                    </div>
-                    <button type="submit" class="btn-gradient text-white w-full py-3 rounded-lg font-semibold">Отправить заявку</button>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    <!-- О проекте (сокращённо, как в ТЗ) -->
-    <section id="about" class="py-20 bg-gray-50">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-12"><h2 class="text-3xl md:text-4xl font-bold">О проекте «Футбольное ГТО»</h2><div class="w-24 h-1 bg-gradient-to-r from-blue-600 to-red-600 mx-auto my-4"></div></div>
-            <div class="grid md:grid-cols-2 gap-12 items-center">
-                <div class="about-slider swiper" data-aos="fade-right">
-                    <div class="swiper-wrapper">
-                        <div class="swiper-slide">
-                            <img src="https://center.ekb.football/wp-content/uploads/gto-e1770670183141.jpg" alt="Футбольное ГТО — тестирование">
-                            <div class="about-slide-caption">
-                                <span class="about-slide-badge">Тестирование</span>
-                                <h3>Профессиональное оборудование</h3>
-                                <p>ReactionX, радары SmartPro, SmartBall</p>
-                            </div>
-                        </div>
-                        <div class="swiper-slide">
-                            <img src="https://sun9-71.vkuserphoto.ru/s/v1/ig2/cUGfxsRs2HPuhFn84g44jau3BTL3zgfinorN_YJfNkykSgpOquBdgc_NB1Iqh6Ygm1xi_Wjjnny14jodDe1-Pv0x.jpg?quality=95&as=32x21,48x32,72x48,108x72,160x107,240x160,360x240,480x320,540x360,640x427,720x480,1080x720,1280x853,1440x960,2560x1707&from=bu&cs=1280x0" alt="Юные футболисты на тренировке">
-                            <div class="about-slide-caption">
-                                <span class="about-slide-badge">30+ показателей</span>
-                                <h3>Объективная оценка навыков</h3>
-                                <p>Техника, быстрота, дриблинг, удары</p>
-                            </div>
-                        </div>
-                        <div class="swiper-slide">
-                            <img src="https://sun9-67.vkuserphoto.ru/s/v1/ig2/Qh_Ro2oIwd-Ml7VdGlFcvvPP9_SFod1-ruufNueM8odd11uP4LASJv-haUa_AMIU7IseM3aATfeymhl-5nAg7IEP.jpg?quality=95&as=32x21,48x32,72x48,108x72,160x107,240x160,360x240,480x320,540x360,640x427,720x480,1080x720,1280x853,1440x960,2560x1707&from=bu&cs=2560x0" alt="Футбольный матч">
-                            <div class="about-slide-caption">
-                                <span class="about-slide-badge">Динамика</span>
-                                <h3>Отслеживание прогресса</h3>
-                                <p>Повторные тесты и рейтинг роста</p>
-                            </div>
-                        </div>
-                        <div class="swiper-slide">
-                            <img src="https://sun9-31.vkuserphoto.ru/s/v1/ig2/bSkWO3sRal-X5lhghNq3U78XB2OOPyAa4I6U-5IVQZZNNsRbceBjG_KWfcoQ1l0LES58fAXijlHeBMn6iobzWZEk.jpg?quality=95&as=32x21,48x32,72x48,108x72,160x107,240x160,360x240,480x320,540x360,640x427,720x480,1080x720,1280x853,1440x960,2560x1707&from=bu&cs=2560x0" alt="Детский футбол">
-                            <div class="about-slide-caption">
-                                <span class="about-slide-badge">Экосистема</span>
-                                <h3>Честная оценка для каждого</h3>
-                                <p>Тренеры, родители и клубы — вместе</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="about-slider-progress"><span></span></div>
-
-                    <div class="swiper-pagination"></div>
-                    <div class="swiper-button-prev"></div>
-                    <div class="swiper-button-next"></div>
-                </div>
-                <div class="space-y-6"><p class="text-lg"><strong>«Футбольное ГТО»</strong> – инновационная система тестирования юных футболистов. Комплексная оценка по единым стандартам с профессиональным оборудованием.</p>
-                <div class="space-y-4"><div class="flex gap-4"><div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">⏱️</div><div><h3 class="font-bold">Объективная оценка</h3><p>Помогаем тренерам видеть потенциал каждого игрока</p></div></div>
-                <div class="flex gap-4"><div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center text-red-600">📈</div><div><h3 class="font-bold">Отслеживание прогресса</h3><p>Родители понимают зоны роста ребёнка</p></div></div></div>
-                <div class="bg-gradient-to-r from-blue-50 to-red-50 p-6 rounded-xl border-l-4 border-blue-600 italic">"Мы создаём экосистему, где каждый юный футболист получает честную оценку своих способностей."</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Преимущества (сетка) -->
-    <section id="advantages" class="py-20 bg-white">
-        <div class="container mx-auto px-4 text-center"><h2 class="text-3xl md:text-4xl font-bold">Наши преимущества</h2><div class="w-24 h-1 bg-gradient-to-r from-blue-600 to-red-600 mx-auto my-4"></div>
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
-            <div class="bg-gray-50 rounded-xl p-6 card-hover"><div class="w-14 h-14 bg-yellow-100 rounded-xl flex items-center justify-center text-2xl mb-4">⚡</div><h3 class="text-xl font-bold mb-2">Первый в регионе</h3><p>Первый автоматизированный сервис футбольного тестирования на Урале</p></div>
-            <div class="bg-gray-50 rounded-xl p-6 card-hover"><div class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center text-2xl mb-4">📊</div><h3 class="text-xl font-bold mb-2">30+ показателей</h3><p>Антропометрия, атлетизм, техника, быстрота, ловкость, дриблинг, удары</p></div>
-            <div class="bg-gray-50 rounded-xl p-6 card-hover"><div class="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center text-2xl mb-4">🏆</div><h3 class="text-xl font-bold mb-2">Объективные рейтинги</h3><p>Рейтинговая система с учётом возраста и пола</p></div>
-            <div class="bg-gray-50 rounded-xl p-6 card-hover"><div class="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center text-2xl mb-4">🖥️</div><h3 class="text-xl font-bold mb-2">Pro оборудование</h3><p>ReactionX, радары SmartPro, SmartBall</p></div>
-            <div class="bg-gray-50 rounded-xl p-6 card-hover"><div class="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center text-2xl mb-4">⚽</div><h3 class="text-xl font-bold mb-2">Топовые школы</h3><p>«Барса», «Урал», «Спартак» и другие</p></div>
-            <div class="bg-gray-50 rounded-xl p-6 card-hover"><div class="w-14 h-14 bg-indigo-100 rounded-xl flex items-center justify-center text-2xl mb-4">📈</div><h3 class="text-xl font-bold mb-2">Отслеживание роста</h3><p>Повторное тестирование и динамика прогресса</p></div>
-        </div>
-        <div class="mt-16 bg-gradient-to-r from-blue-600 to-red-600 rounded-2xl p-8 text-white"><h3 class="text-2xl font-bold">Единственный сертифицированный центр в регионе</h3><p class="mt-2">Методика разработана совместно с ведущими тренерами.</p></div>
-        </div>
-    </section>
-
-    <!-- Рейтинг лучших участников (карусели по возрастам) -->
-    <section id="rating" class="py-20 bg-gray-50">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-12"><h2 class="text-3xl md:text-4xl font-bold">Рейтинг лучших участников</h2><div class="w-24 h-1 bg-gradient-to-r from-blue-600 to-red-600 mx-auto my-4"></div></div>
-            <div class="flex justify-center gap-2 flex-wrap mb-8">
-                <button class="age-tab-btn px-4 py-2 rounded-full bg-white shadow-sm hover:bg-blue-50" data-age="U6">U-6</button>
-                <button class="age-tab-btn px-4 py-2 rounded-full bg-white shadow-sm hover:bg-blue-50" data-age="U7">U-7</button>
-                <button class="age-tab-btn px-4 py-2 rounded-full bg-white shadow-sm hover:bg-blue-50" data-age="U8">U-8</button>
-                <button class="age-tab-btn px-4 py-2 rounded-full bg-white shadow-sm hover:bg-blue-50 active:bg-blue-600 active:text-white" data-age="U9">U-9</button>
-                <button class="age-tab-btn px-4 py-2 rounded-full bg-white shadow-sm hover:bg-blue-50" data-age="U10">U-10</button>
-                <button class="age-tab-btn px-4 py-2 rounded-full bg-white shadow-sm hover:bg-blue-50" data-age="U11">U-11</button>
-                <button class="age-tab-btn px-4 py-2 rounded-full bg-white shadow-sm hover:bg-blue-50" data-age="U12">U-12</button>
-                <button class="age-tab-btn px-4 py-2 rounded-full bg-white shadow-sm hover:bg-blue-50" data-age="U13">U-13</button>
-                <button class="age-tab-btn px-4 py-2 rounded-full bg-white shadow-sm hover:bg-blue-50" data-age="U14">U-14</button>
-            </div>
-            <div class="swiper ratingSwiper">
-                <div class="swiper-wrapper" id="topPlayersCarousel"></div>
-                <div class="swiper-pagination"></div>
-                <div class="swiper-button-next"></div>
-                <div class="swiper-button-prev"></div>
-            </div>
-            <div class="text-center mt-10"><a href="/results" class="btn-gradient text-white px-6 py-3 rounded-lg inline-flex items-center gap-2">Смотреть все результаты →</a></div>
-        </div>
-    </section>
-
-    <!-- Мероприятия (галерея) -->
-    <section id="events" class="py-20 bg-white">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-12"><h2 class="text-3xl md:text-4xl font-bold">Отчёты прошлых мероприятий</h2><div class="w-24 h-1 bg-gradient-to-r from-blue-600 to-red-600 mx-auto my-4"></div></div>
-            <div class="grid md:grid-cols-3 gap-8" id="eventsGrid"></div>
-        </div>
-    </section>
-
-    <!-- Контакты и форма обратной связи -->
-    <section id="contact" class="py-20 bg-gray-50">
-        <div class="container mx-auto px-4">
-            <div class="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
-                <div class="bg-white rounded-2xl p-8 shadow">
-                    <h3 class="text-2xl font-bold mb-6">✉️ Форма обратной связи</h3>
-                    <form id="contactForm" class="space-y-5">
-                        <input type="text" name="name" placeholder="Ваше имя *" required class="w-full p-3 border rounded-lg">
-                        <input type="tel" name="phone" placeholder="Телефон *" required class="w-full p-3 border rounded-lg">
-                        <input type="email" name="email" placeholder="Email" class="w-full p-3 border rounded-lg">
-                        <textarea name="message" rows="4" placeholder="Ваш вопрос *" required class="w-full p-3 border rounded-lg"></textarea>
-                        <button type="submit" class="btn-gradient text-white w-full py-3 rounded-lg font-semibold">Отправить сообщение</button>
-                    </form>
-                </div>
-                <div class="bg-gradient-to-br from-blue-600 to-red-600 rounded-2xl p-8 text-white shadow">
-                    <h3 class="text-2xl font-bold mb-4">🎟️ Купить билет на тестирование</h3>
-                    <p>Ближайшее тестирование <strong>15 апреля 2026</strong> в Спорткомплексе «Урал»</p>
-                    <div class="my-4 space-y-2">
-                        <div class="flex justify-between"><span>Стоимость:</span><strong>1 500 ₽</strong></div>
-                        <div class="flex justify-between"><span>Длительность:</span><strong>~2 часа</strong></div>
-                        <div class="flex justify-between"><span>Места:</span><strong class="text-green-300">Осталось 15 мест</strong></div>
-                    </div>
-                    <button id="buyTicketBtn" class="bg-white text-blue-600 font-semibold py-2 px-6 rounded-lg w-full mt-4 hover:bg-gray-100 transition">Купить билет</button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Футер -->
-    <footer class="bg-gray-900 text-white py-12">
-        <div class="container mx-auto px-4 text-center">© 2026 Уральский Футбольный Союз. Все права защищены.</div>
-    </footer>
-
-    <div id="videoModal" class="video-modal hidden">
-        <div class="video-modal__backdrop" data-close-video></div>
-        <div class="video-modal__content">
-            <button class="video-modal__close" data-close-video aria-label="Закрыть">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-            <video id="videoGTO" controls preload="metadata">
-                <source src="{% static 'img/video.mp4' %}" type="video/mp4">
-            </video>
+        <div class="kpi-strip mt-16 max-w-3xl">
+            <div><div class="stat-num tnum" id="statParticipants">0</div><div class="text-gray-400 text-sm mt-2">Протестировано детей</div></div>
+            <div><div class="stat-num tnum">30+</div><div class="text-gray-400 text-sm mt-2">Показателей оценки</div></div>
+            <div><div class="stat-num tnum" id="statClubs">0</div><div class="text-gray-400 text-sm mt-2">Футбольных школ</div></div>
         </div>
     </div>
+</section>
 
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script src="{% static 'js/main.js' %}"></script>
+<!-- ЗАПИСЬ -->
+<section id="registration-form" class="section section-paper">
+    <div class="container mx-auto px-4">
+        <div class="grid md:grid-cols-5 gap-12 items-start max-w-6xl mx-auto">
+            <div class="md:col-span-2">
+                <div class="eyebrow mb-4">Запись</div>
+                <h2 class="text-3xl md:text-4xl font-bold tracking-tight leading-tight">Оставьте заявку на ближайшее тестирование</h2>
+                <p class="text-gray-600 mt-5">Менеджер свяжется с вами в течение дня, подтвердит время и пришлёт памятку для родителей.</p>
+                <div class="mt-8 space-y-3 text-sm">
+                    <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> Тестирование длится ~2 часа</div>
+                    <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> Возраст: от 6 до 14 лет</div>
+                    <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> Инвентарь и форма — по памятке</div>
+                </div>
+            </div>
+
+            <form id="registrationForm" class="md:col-span-3 bg-white border border-gray-200 p-8 rounded">
+                <div class="grid md:grid-cols-2 gap-4">
+                    <input type="text" name="parent_name" placeholder="Фамилия и имя родителя *" required class="input">
+                    <input type="tel" name="parent_phone" placeholder="Телефон *" required class="input">
+                    <input type="text" name="child_name" placeholder="Имя ребёнка *" required class="input">
+                    <input type="number" name="child_age" placeholder="Возраст ребёнка" class="input">
+                    <input type="text" name="club_name" placeholder="Футбольный клуб (необязательно)" class="input md:col-span-2">
+                </div>
+                <button type="submit" class="btn btn-ink w-full justify-center mt-6">Отправить заявку</button>
+                <p class="text-xs text-gray-500 mt-4">Нажимая кнопку, вы соглашаетесь с политикой обработки персональных данных.</p>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- О ПРОЕКТЕ -->
+<section id="about" class="section bg-white">
+    <div class="container mx-auto px-4">
+        <div class="mb-14 max-w-3xl">
+            <div class="eyebrow mb-4">О проекте</div>
+            <h2 class="text-3xl md:text-5xl font-bold tracking-tight leading-[1.05]">Единая система оценки детского футбола на Урале</h2>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-14 items-start">
+            <div class="about-slider swiper">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide">
+                        <img src="https://center.ekb.football/wp-content/uploads/gto-e1770670183141.jpg" alt="Тестирование">
+                        <div class="about-slide-caption">
+                            <span class="about-slide-badge">Оборудование</span>
+                            <h3>ReactionX, SmartPro, SmartBall</h3>
+                            <p>Профессиональные датчики и радары</p>
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://sun9-71.vkuserphoto.ru/s/v1/ig2/cUGfxsRs2HPuhFn84g44jau3BTL3zgfinorN_YJfNkykSgpOquBdgc_NB1Iqh6Ygm1xi_Wjjnny14jodDe1-Pv0x.jpg?quality=95&as=32x21,48x32,72x48,108x72,160x107,240x160,360x240,480x320,540x360,640x427,720x480,1080x720,1280x853,1440x960,2560x1707&from=bu&cs=1280x0" alt="Тренировка">
+                        <div class="about-slide-caption">
+                            <span class="about-slide-badge">30+ показателей</span>
+                            <h3>Техника, скорость, дриблинг</h3>
+                            <p>Полный профиль навыков игрока</p>
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://sun9-67.vkuserphoto.ru/s/v1/ig2/Qh_Ro2oIwd-Ml7VdGlFcvvPP9_SFod1-ruufNueM8odd11uP4LASJv-haUa_AMIU7IseM3aATfeymhl-5nAg7IEP.jpg?quality=95&as=32x21,48x32,72x48,108x72,160x107,240x160,360x240,480x320,540x360,640x427,720x480,1080x720,1280x853,1440x960,2560x1707&from=bu&cs=2560x0" alt="Матч">
+                        <div class="about-slide-caption">
+                            <span class="about-slide-badge">Динамика</span>
+                            <h3>Отслеживание прогресса</h3>
+                            <p>Повторные тесты и рейтинг роста</p>
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://sun9-31.vkuserphoto.ru/s/v1/ig2/bSkWO3sRal-X5lhghNq3U78XB2OOPyAa4I6U-5IVQZZNNsRbceBjG_KWfcoQ1l0LES58fAXijlHeBMn6iobzWZEk.jpg?quality=95&as=32x21,48x32,72x48,108x72,160x107,240x160,360x240,480x320,540x360,640x427,720x480,1080x720,1280x853,1440x960,2560x1707&from=bu&cs=2560x0" alt="Детский футбол">
+                        <div class="about-slide-caption">
+                            <span class="about-slide-badge">Экосистема</span>
+                            <h3>Для тренеров, родителей и клубов</h3>
+                            <p>Прозрачная оценка каждого игрока</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-slider-progress"><span></span></div>
+                <div class="swiper-pagination"></div>
+                <div class="swiper-button-prev"></div>
+                <div class="swiper-button-next"></div>
+            </div>
+
+            <div>
+                <p class="text-lg text-gray-800 leading-relaxed">
+                    «Футбольное ГТО» — инновационная система тестирования юных футболистов. Комплексная оценка по единым стандартам с использованием профессионального оборудования.
+                </p>
+
+                <div class="mt-10 grid gap-px bg-gray-200 border border-gray-200">
+                    <div class="bg-white p-6 flex gap-5">
+                        <svg class="w-6 h-6 text-red-600 flex-shrink-0 mt-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                        <div>
+                            <h3 class="font-bold text-lg">Объективная оценка</h3>
+                            <p class="text-gray-600 mt-1">Тренеры видят потенциал и зоны роста каждого игрока.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 flex gap-5">
+                        <svg class="w-6 h-6 text-red-600 flex-shrink-0 mt-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941"/></svg>
+                        <div>
+                            <h3 class="font-bold text-lg">Понятный прогресс</h3>
+                            <p class="text-gray-600 mt-1">Родители видят динамику по каждому показателю.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-10 border-l-2 border-red-600 pl-6">
+                    <p class="text-lg text-gray-800 italic">«Мы создаём экосистему, где каждый юный футболист получает честную оценку своих способностей.»</p>
+                    <div class="eyebrow mt-3" style="color:var(--muted)">Уральский Футбольный Союз</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ПРЕИМУЩЕСТВА -->
+<section id="advantages" class="section section-paper">
+    <div class="container mx-auto px-4">
+        <div class="mb-14 max-w-3xl">
+            <div class="eyebrow mb-4">Преимущества</div>
+            <h2 class="text-3xl md:text-5xl font-bold tracking-tight leading-[1.05]">Почему это работает</h2>
+            <p class="text-lg text-gray-600 mt-5 max-w-2xl">Единая методика, профессиональное оборудование и понятная аналитика для всех участников процесса.</p>
+        </div>
+
+        <div class="grid-lines sm:grid-cols-2 lg:grid-cols-3">
+            <div class="adv-card p-8">
+                <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/></svg>
+                <h3 class="text-xl font-bold mt-6">Первый в регионе</h3>
+                <p class="text-gray-600 mt-2">Автоматизированный сервис футбольного тестирования на Урале.</p>
+            </div>
+            <div class="adv-card p-8">
+                <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg>
+                <h3 class="text-xl font-bold mt-6">30+ показателей</h3>
+                <p class="text-gray-600 mt-2">Антропометрия, атлетизм, техника, скорость, дриблинг, удары.</p>
+            </div>
+            <div class="adv-card p-8">
+                <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0"/></svg>
+                <h3 class="text-xl font-bold mt-6">Объективные рейтинги</h3>
+                <p class="text-gray-600 mt-2">Рейтинговая система с учётом возраста и пола игрока.</p>
+            </div>
+            <div class="adv-card p-8">
+                <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0V12a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 12V5.25"/></svg>
+                <h3 class="text-xl font-bold mt-6">Pro-оборудование</h3>
+                <p class="text-gray-600 mt-2">ReactionX, радары SmartPro, SmartBall и другое.</p>
+            </div>
+            <div class="adv-card p-8">
+                <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg>
+                <h3 class="text-xl font-bold mt-6">Топовые школы</h3>
+                <p class="text-gray-600 mt-2">«Барса», «Урал», «Спартак» и другие академии.</p>
+            </div>
+            <div class="adv-card p-8">
+                <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941"/></svg>
+                <h3 class="text-xl font-bold mt-6">Динамика роста</h3>
+                <p class="text-gray-600 mt-2">Повторное тестирование показывает прогресс.</p>
+            </div>
+        </div>
+
+        <div class="mt-12 bg-gray-900 text-white p-10 md:p-12 rounded flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+                <div class="eyebrow eyebrow-light mb-3">Сертификация</div>
+                <h3 class="text-2xl md:text-3xl font-bold tracking-tight">Единственный сертифицированный центр в регионе</h3>
+                <p class="text-gray-400 mt-3 max-w-2xl">Методика разработана совместно с ведущими детскими тренерами Урала.</p>
+            </div>
+            <a href="#registration-form" class="btn btn-red whitespace-nowrap">Записаться</a>
+        </div>
+    </div>
+</section>
+
+<!-- РЕЙТИНГ -->
+<section id="rating" class="section bg-white">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+            <div>
+                <div class="eyebrow mb-4">Рейтинг</div>
+                <h2 class="text-3xl md:text-5xl font-bold tracking-tight leading-[1.05]">Лучшие участники сезона</h2>
+            </div>
+            <a href="/results" class="text-sm font-semibold text-gray-900 hover:text-red-600 inline-flex items-center gap-2">
+                Все результаты
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+
+        <div class="flex flex-wrap gap-2 mb-10">
+            <button class="tag-age" data-age="U6">U-6</button>
+            <button class="tag-age" data-age="U7">U-7</button>
+            <button class="tag-age" data-age="U8">U-8</button>
+            <button class="tag-age active" data-age="U9">U-9</button>
+            <button class="tag-age" data-age="U10">U-10</button>
+            <button class="tag-age" data-age="U11">U-11</button>
+            <button class="tag-age" data-age="U12">U-12</button>
+            <button class="tag-age" data-age="U13">U-13</button>
+            <button class="tag-age" data-age="U14">U-14</button>
+        </div>
+
+        <div class="swiper ratingSwiper">
+            <div class="swiper-wrapper" id="topPlayersCarousel"></div>
+            <div class="swiper-pagination"></div>
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+        </div>
+    </div>
+</section>
+
+<!-- МЕРОПРИЯТИЯ -->
+<section id="events" class="section section-paper">
+    <div class="container mx-auto px-4">
+        <div class="mb-14 max-w-3xl">
+            <div class="eyebrow mb-4">Отчёты</div>
+            <h2 class="text-3xl md:text-5xl font-bold tracking-tight leading-[1.05]">Прошедшие мероприятия</h2>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8" id="eventsGrid"></div>
+    </div>
+</section>
+
+<!-- КОНТАКТЫ -->
+<section id="contact" class="section bg-white">
+    <div class="container mx-auto px-4">
+        <div class="grid md:grid-cols-2 gap-10 max-w-6xl mx-auto">
+            <div class="border border-gray-200 p-8 md:p-10 rounded">
+                <div class="eyebrow mb-3">Обратная связь</div>
+                <h3 class="text-2xl font-bold mb-6">Задайте вопрос</h3>
+                <form id="contactForm" class="space-y-4">
+                    <input type="text" name="name" placeholder="Ваше имя *" required class="input">
+                    <input type="tel" name="phone" placeholder="Телефон *" required class="input">
+                    <input type="email" name="email" placeholder="Email" class="input">
+                    <textarea name="message" rows="4" placeholder="Ваш вопрос *" required class="input"></textarea>
+                    <button type="submit" class="btn btn-ink w-full justify-center">Отправить сообщение</button>
+                </form>
+            </div>
+
+            <div class="bg-gray-900 text-white p-8 md:p-10 rounded flex flex-col">
+                <div class="eyebrow eyebrow-light mb-3">Ближайшее тестирование</div>
+                <h3 class="text-3xl font-bold tracking-tight">15 апреля 2026</h3>
+                <p class="text-gray-400 mt-2">Спорткомплекс «Урал», Екатеринбург</p>
+
+                <div class="mt-8 border-t border-white/10 pt-6 space-y-3">
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">Стоимость</span><span class="font-semibold tnum">1 500 ₽</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">Длительность</span><span class="font-semibold">~2 часа</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">Свободно мест</span><span class="font-semibold text-red-400 tnum">15</span></div>
+                </div>
+
+                <button id="buyTicketBtn" class="btn btn-red w-full justify-center mt-auto pt-3 mt-8">Купить билет</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-gray-900 text-white pt-16 pb-8">
+    <div class="container mx-auto px-4">
+        <div class="grid md:grid-cols-3 gap-10 pb-10 border-b border-white/10">
+            <div>
+                <img src="{% static 'img/logo-new.svg' %}" alt="УФС" width="180" class="brightness-0 invert opacity-90">
+                <p class="text-gray-400 text-sm mt-5 max-w-xs">Единая система тестирования юных футболистов Уральского Футбольного Союза.</p>
+            </div>
+            <div>
+                <div class="eyebrow eyebrow-light mb-4">Разделы</div>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <a href="#about" class="text-gray-400 hover:text-white">О проекте</a>
+                    <a href="#advantages" class="text-gray-400 hover:text-white">Преимущества</a>
+                    <a href="#rating" class="text-gray-400 hover:text-white">Рейтинг</a>
+                    <a href="#events" class="text-gray-400 hover:text-white">Мероприятия</a>
+                    <a href="/results" class="text-gray-400 hover:text-white">Результаты</a>
+                    <a href="#contact" class="text-gray-400 hover:text-white">Контакты</a>
+                </div>
+            </div>
+            <div>
+                <div class="eyebrow eyebrow-light mb-4">Контакты</div>
+                <a href="tel:+79089008860" class="block text-xl font-bold tnum">8 (908) 900-88-60</a>
+                <a href="mailto:info@uralfootball.ru" class="block text-gray-400 text-sm mt-2 hover:text-white">info@uralfootball.ru</a>
+            </div>
+        </div>
+        <div class="pt-6 text-xs text-gray-500 flex flex-col md:flex-row md:justify-between gap-2">
+            <div>© 2026 Уральский Футбольный Союз</div>
+            <div>Политика конфиденциальности · Обработка персональных данных</div>
+        </div>
+    </div>
+</footer>
+
+<div id="videoModal" class="video-modal hidden">
+    <div class="video-modal__backdrop" data-close-video></div>
+    <div class="video-modal__content">
+        <button class="video-modal__close" data-close-video aria-label="Закрыть">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        <video id="videoGTO" controls preload="metadata">
+            <source src="{% static 'img/video.mp4' %}" type="video/mp4">
+        </video>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="{% static 'js/main.js' %}"></script>
 </body>
 </html>

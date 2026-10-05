@@ -9,8 +9,23 @@
     <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
     <link rel="stylesheet" href="{% static 'css/custom.css' %}">
     <style>
-        .player-card.selected { border: 2px solid #2563eb; background: #eff6ff; }
-        .compare-tag { background: #e0e7ff; border-radius: 20px; padding: 4px 12px; font-size: 0.75rem; }
+        .results-hero h1 { letter-spacing: -.02em; }
+        .filter-input, .filter-select {
+            width: 100%;
+            padding: .75rem 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 3px;
+            background: #fff;
+            font-size: 14px;
+            transition: border-color .15s;
+        }
+        header {background-color: white;}
+        .filter-input:focus, .filter-select:focus { outline: none; border-color: #0b1220; }
+        .results-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        @media (min-width: 768px)  { .results-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { .results-grid { grid-template-columns: repeat(3, 1fr); } }
+        .player-card.selected { border: 2px solid #0b1220; background: #f8fafc; }
+        .compare-tag { background: #f1f5f9; border-radius: 2px; padding: 4px 10px; font-size: .75rem; }
     </style>
 </head>
 <body class="bg-gray-50">
