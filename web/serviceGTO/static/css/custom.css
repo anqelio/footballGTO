@@ -190,3 +190,294 @@ img, svg, video { display: block; max-width: 100%; }
 
 /* ============ Utilities ============ */
 .tnum { font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   PLAYER RATING CARDS (Gold / Emerald / Obsidian)
+   ============================================================ */
+.rating-card-wrap{
+    container-type: inline-size;
+    position: relative;
+    width: 100%;
+    max-width: 350px;
+    margin: 0 auto;
+}
+.rating-card-wrap::before{
+    content:'';
+    display:block;
+    padding-top: 140%; /* aspect 5:7 без aspect-ratio (для html2canvas) */
+}
+
+.rating-card{
+    position:absolute;
+    inset:0;
+    /* font-size = 2.857% ширины контейнера → 10px при 350px */
+    font-size: 2.857cqw;
+
+    padding: 2.2em 2.2em 2em;
+    display: grid;
+    grid-template-rows: 1fr auto auto;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: 1.6em;
+    color: var(--ink);
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    box-shadow:
+        0 3.2em 5.2em -2.4em rgba(0,0,0,.85),
+        0 0.3em 0.8em rgba(0,0,0,.4),
+        0 0 0 1px var(--edge);
+}
+
+.rating-card::before{
+    content:'';
+    position:absolute; inset:0; z-index:-3;
+    background: var(--bg);
+}
+.rating-card::after{
+    content:'';
+    position:absolute; inset:0; z-index:-2; pointer-events:none;
+    opacity: var(--stripe-op, .5);
+    background-image: repeating-linear-gradient(122deg,
+        rgba(255,255,255,.10) 0 1.5px,
+        transparent 1.5px 11px);
+}
+
+.rating-card__grain{
+    position:absolute; inset:0; z-index:3; pointer-events:none;
+    opacity:.20; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+}
+
+.rating-card__frame{
+    position:absolute; inset:.9em; z-index:4; pointer-events:none;
+    border:1px solid var(--frame);
+    border-radius:.9em;
+}
+
+/* ---------- Шапка ---------- */
+.rating-card__top{
+    position:absolute; top:2.2em; left:2.2em; right:2.2em; z-index:2;
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:1.6em;
+}
+.rating-card__rating{
+    display:flex; flex-direction:column; align-items:flex-start;
+    line-height:.8;
+}
+.rating-card__rating-num{
+    font-family:'Oswald','Inter',sans-serif;
+    font-size:5.6em; font-weight:700; letter-spacing:-.045em;
+    text-shadow:0 1px 0 var(--emboss);
+}
+.rating-card__rating-cap{
+    margin-top:.8em;
+    font-family:'Oswald','Inter',sans-serif;
+    font-size:1.1em; font-weight:500; letter-spacing:.34em;
+    text-transform:uppercase; opacity:.72;
+}
+.rating-card__tags{
+    display:flex; flex-direction:column; align-items:flex-end;
+    gap:.6em; padding-top:.4em;
+    min-width:0;
+}
+.rating-card__tag{
+    font-family:'Oswald','Inter',sans-serif;
+    font-size:1.1em; font-weight:600; letter-spacing:.14em;
+    text-transform:uppercase;
+    padding:.4em 1em .3em;
+    border-radius:.4em;
+    background:var(--chip-bg);
+    border:1px solid var(--chip-line);
+    backdrop-filter:blur(3px);
+}
+.rating-card__tag--club{
+    background:var(--chip-solid);
+    border-color:transparent;
+    color:var(--chip-solid-ink);
+    max-width:14em;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+/* ---------- Портрет ---------- */
+.rating-card__portrait{
+    position:relative; z-index:1;
+    display:grid; place-items:end center;
+    min-height:0;
+}
+.rating-card__portrait::before{
+    content:'';
+    position:absolute; left:50%; bottom:2%;
+    width:86%; aspect-ratio:1;
+    transform:translateX(-50%);
+    border-radius:50%;
+    background:radial-gradient(circle at 50% 50%, var(--glow) 0%, rgba(0,0,0,0) 68%);
+}
+.rating-card__figure{
+    position:relative; width:100%; height:100%;
+    color:var(--figure);
+    filter:drop-shadow(0 1.4em 2.2em rgba(0,0,0,.35));
+}
+
+/* ---------- Статы ---------- */
+.rating-card__stats{
+    position:relative; z-index:2;
+    display:grid; grid-template-columns:1fr 1fr;
+    margin-bottom:1.4em;
+}
+.rating-card__stat{
+    display:flex; align-items:baseline; gap:1em;
+    padding:.7em 1.4em .7em 0;
+    border-top:1px solid var(--line);
+    min-width:0;
+}
+.rating-card__stat:nth-child(even){
+    padding-left:1.4em; padding-right:0;
+    border-left:1px solid var(--line);
+}
+.rating-card__stat--wide{
+    grid-column:1 / -1;
+    border-left:none; padding-left:0; padding-right:0;
+}
+.rating-card__stat--wide::after{
+    content:''; flex:1 1 auto; min-width:1.6em; height:1px;
+    align-self:center;
+    background:repeating-linear-gradient(90deg,
+        var(--line-strong) 0 2px, transparent 2px 7px);
+}
+.rating-card__stat-val{
+    font-family:'Oswald','Inter',sans-serif;
+    font-size:2.1em; font-weight:600; line-height:1;
+    min-width:1.4em; letter-spacing:-.01em;
+}
+.rating-card__stat-key{
+    font-size:.9em; font-weight:600; letter-spacing:.11em;
+    text-transform:uppercase; white-space:nowrap; opacity:.66;
+}
+
+/* ---------- Низ ---------- */
+.rating-card__bottom{
+    position:relative; z-index:2;
+    padding-top:1.3em;
+    border-top:1px solid var(--line-strong);
+}
+.rating-card__name{
+    margin:0;
+    font-family:'Oswald','Inter',sans-serif;
+    font-size:2.1em; font-weight:600; line-height:1.05;
+    letter-spacing:.035em; text-transform:uppercase;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.rating-card__sub{
+    margin:.6em 0 0;
+    font-size:1em; font-weight:500;
+    letter-spacing:.1em; text-transform:uppercase;
+    opacity:.6;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* ---------- Варианты ---------- */
+.rating-card--gold{
+    --bg:
+        radial-gradient(112% 70% at 80% 6%, #fff8d8 0%, rgba(255,248,216,0) 58%),
+        radial-gradient(96% 66% at 6% 100%, #8a5a10 0%, rgba(138,90,16,0) 62%),
+        linear-gradient(158deg,#f7db85 0%,#ddad35 30%,#b8801a 57%,#eecb64 81%,#a97a1a 100%);
+    --ink:#2a1c05; --line:rgba(60,40,6,.20); --line-strong:rgba(60,40,6,.36);
+    --edge:rgba(255,255,255,.55); --frame:rgba(255,255,255,.42);
+    --emboss:rgba(255,255,255,.55);
+    --chip-bg:rgba(255,255,255,.32); --chip-line:rgba(255,255,255,.6);
+    --chip-solid:#2a1c05; --chip-solid-ink:#f7db85;
+    --glow:rgba(255,252,232,.9); --figure:#3d2a08; --stripe-op:.5;
+}
+.rating-card--emerald{
+    --bg:
+        radial-gradient(112% 70% at 80% 6%, #d2ffec 0%, rgba(210,255,236,0) 56%),
+        radial-gradient(96% 66% at 6% 100%, #02301f 0%, rgba(2,48,31,0) 62%),
+        linear-gradient(158deg,#48d49a 0%,#0fa06a 30%,#056144 58%,#31c08b 82%,#045139 100%);
+    --ink:#02231a; --line:rgba(2,40,28,.22); --line-strong:rgba(2,40,28,.38);
+    --edge:rgba(255,255,255,.5); --frame:rgba(255,255,255,.38);
+    --emboss:rgba(255,255,255,.5);
+    --chip-bg:rgba(255,255,255,.28); --chip-line:rgba(255,255,255,.55);
+    --chip-solid:#02231a; --chip-solid-ink:#7ef0bd;
+    --glow:rgba(220,255,240,.85); --figure:#023425; --stripe-op:.45;
+}
+.rating-card--obsidian{
+    --bg:
+        radial-gradient(112% 70% at 78% 4%, #5c7086 0%, rgba(92,112,134,0) 56%),
+        radial-gradient(96% 66% at 8% 100%, #000 0%, rgba(0,0,0,0) 60%),
+        linear-gradient(158deg,#2d3843 0%,#161d25 36%,#0a0e13 63%,#25303b 88%,#0d1218 100%);
+    --ink:#eef4fa; --line:rgba(255,255,255,.13); --line-strong:rgba(255,255,255,.26);
+    --edge:rgba(255,255,255,.22); --frame:rgba(255,255,255,.16);
+    --emboss:rgba(0,0,0,.7);
+    --chip-bg:rgba(255,255,255,.08); --chip-line:rgba(255,255,255,.2);
+    --chip-solid:#eef4fa; --chip-solid-ink:#0a0e13;
+    --glow:rgba(126,182,244,.55); --figure:#080c11; --stripe-op:.32;
+}
+
+/* ---------- Меню выбора варианта скачивания ---------- */
+.download-menu{
+    position: fixed;
+    z-index: 9999;
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:8px;
+    box-shadow:0 12px 32px -10px rgba(0,0,0,.28);
+    padding:4px;
+    min-width:150px;
+}
+.download-menu__item{
+    display:flex; align-items:center; gap:8px;
+    width:100%; text-align:left;
+    padding:8px 12px; border-radius:5px;
+    font-size:13px; font-weight:500; cursor:pointer;
+    transition:background .15s;
+    background:transparent; border:none;
+}
+.download-menu__item:hover{ background:#f3f4f6; }
+.download-menu__dot{
+    width:14px; height:14px; border-radius:50%; flex-shrink:0;
+    border:1px solid rgba(0,0,0,.1);
+}
+.download-menu__dot--gold    { background: linear-gradient(135deg,#f7db85,#b8801a); }
+.download-menu__dot--emerald { background: linear-gradient(135deg,#48d49a,#056144); }
+.download-menu__dot--obsidian{ background: linear-gradient(135deg,#2d3843,#0a0e13); }
+
+.rating-card__portrait{
+    position:relative; z-index:1;
+    display:grid; place-items:end center;
+    min-height:0;
+    overflow:hidden;
+}
+.rating-card__portrait::before{
+    content:'';
+    position:absolute; left:50%; bottom:2%;
+    width:86%; aspect-ratio:1;
+    transform:translateX(-50%);
+    border-radius:50%;
+    background:radial-gradient(circle at 50% 50%, var(--glow) 0%, rgba(0,0,0,0) 68%);
+    z-index:0;
+}
+.rating-card__photo{
+    position:relative;
+    z-index:1;
+    display:block;
+    max-width:88%;
+    max-height:100%;
+    width:auto;
+    height:auto;
+    object-fit:contain;
+    object-position:center bottom;
+    align-self:end;
+    filter:drop-shadow(0 1.2em 2em rgba(0,0,0,.38));
+}
+
+/* Логотип УФС вместо текста «ГТО» */
+.rating-card__logo{
+    margin-top:.6em;
+    height:2.2em;
+    width:8em;               /* фиксируем ширину: SVG без intrinsic-размера иначе схлопнется в 0 */
+    max-width:100%;
+    object-fit:contain;
+    object-position:left center;
+    opacity:.92;
+}

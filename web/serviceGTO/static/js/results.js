@@ -9,6 +9,7 @@ const state = {
     perPage: 12,
     filters: { search: '', club: 'all', age: 'all', gender: 'all', sort: 'total_rating' },
     selected: new Set(),
+    playerCache: new Map(),
 };
 
 /* ============================================================
@@ -30,6 +31,168 @@ function debounce(fn, wait = 300) {
 }
 
 /* ============================================================
+   STATIC ASSETS → DATA URI (для html2canvas)
+   ============================================================ */
+const PLACEHOLDER_PHOTO = '/static/img/noimg.png';
+const LOGO_URL_DEFAULT  = '/static/img/logo-new.svg';
+
+let LOGO_URL = LOGO_URL_DEFAULT;
+
+async function toDataUrl(url) {
+    const res = await fetch(url, { mode: 'cors', cache: 'force-cache' });
+    if (!res.ok) throw new Error(`fetch ${url} failed`);
+    const blob = await res.blob();
+    return await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.onerror = reject;
+        fr.readAsDataURL(blob);
+    });
+}
+
+/** Логотип грузим один раз как data URI */
+const logoReady = (async () => {
+    try {
+        LOGO_URL = await toDataUrl(LOGO_URL_DEFAULT);
+    } catch (e) {
+        console.warn('[logo] fallback to url', e);
+    }
+})();
+
+/** Кэш фото игроков → data URI */
+const photoCache = new Map();
+async function resolvePhoto(url) {
+    const src = url || PLACEHOLDER_PHOTO;
+    if (photoCache.has(src)) return photoCache.get(src);
+
+    const p = (async () => {
+        try {
+            return await toDataUrl(src);
+        } catch {
+            if (src !== PLACEHOLDER_PHOTO) {
+                try { return await toDataUrl(PLACEHOLDER_PHOTO); }
+                catch { return PLACEHOLDER_PHOTO; }
+            }
+            return src;
+        }
+    })();
+
+    photoCache.set(src, p);
+    return p;
+}
+
+/* ============================================================
+   CARD VARIANTS + RENDER
+   ============================================================ */
+const CARD_VARIANTS = {
+    gold:     { label: 'Gold',     className: 'rating-card--gold' },
+    emerald:  { label: 'Emerald',  className: 'rating-card--emerald' },
+    obsidian: { label: 'Obsidian', className: 'rating-card--obsidian' },
+};
+
+/**
+ * Градация по общему рейтингу:
+ *   100–90 → gold
+ *    89–80 → emerald
+ *    79–0  → obsidian
+ */
+function pickVariantByRating(rating) {
+    const r = Number(rating) || 0;
+    if (r >= 90) return 'gold';
+    if (r >= 80) return 'emerald';
+    return 'obsidian';
+}
+
+function footLabel(foot) {
+    if (foot === 'left')  return 'левая';
+    if (foot === 'right') return 'правая';
+    return '';
+}
+
+/**
+ * @param {object} player
+ * @param {'gold'|'emerald'|'obsidian'} [variant]
+ * @param {object} [opts] — { photoUrl: dataURI }
+ */
+function renderRatingCard(player, variant, opts = {}) {
+    const vKey = variant || pickVariantByRating(player.total_rating);
+    const v = CARD_VARIANTS[vKey] || CARD_VARIANTS.obsidian;
+
+    const rating   = Math.round(player.total_rating ?? 0);
+    const club     = player.club_name || '—';
+    const ageGroup = player.age ? `U-${player.age}` : '—';
+    const age      = player.age ? `${player.age} лет` : '';
+    const foot     = footLabel(player.preferred_foot);
+    const sub      = [club, age, foot].filter(Boolean).join(' · ');
+
+    const photo = opts.photoUrl || player.photo_url || PLACEHOLDER_PHOTO;
+
+    const statRows = [
+        { val: Math.round(player.athleticism ?? 0), key: 'Атлетизм' },
+        { val: Math.round(player.speed ?? 0),       key: 'Быстрота' },
+        { val: Math.round(player.agility ?? 0),     key: 'Ловкость' },
+        { val: Math.round(player.dribbling ?? 0),   key: 'Дриблинг' },
+        { val: Math.round(player.technique ?? 0),   key: 'Техника' },
+        { val: Math.round(player.shots ?? 0),       key: 'Удары' },
+    ];
+    const anthro = Math.round(player.anthropometry ?? 0);
+
+    const statsHTML = statRows.map(s => `
+        <div class="rating-card__stat">
+            <span class="rating-card__stat-val">${s.val}</span>
+            <span class="rating-card__stat-key">${esc(s.key)}</span>
+        </div>
+    `).join('');
+
+    return `
+        <div class="rating-card-wrap">
+            <article class="rating-card ${v.className}">
+                <span class="rating-card__grain" aria-hidden="true"></span>
+                <span class="rating-card__frame" aria-hidden="true"></span>
+
+                <header class="rating-card__top">
+                    <div class="rating-card__rating">
+                        <span class="rating-card__rating-num">${rating}</span>
+                        <img
+                            src="${LOGO_URL}"
+                            alt="УФС"
+                            class="rating-card__logo"
+                            decoding="sync"
+                        >
+                    </div>
+                    <div class="rating-card__tags">
+                        <span class="rating-card__tag">${esc(ageGroup)}</span>
+                        <span class="rating-card__tag rating-card__tag--club" title="${esc(club)}">${esc(club)}</span>
+                    </div>
+                </header>
+
+                <div class="rating-card__portrait">
+                    <img
+                        src="${esc(photo)}"
+                        alt=""
+                        class="rating-card__photo"
+                        decoding="sync"
+                    >
+                </div>
+
+                <div class="rating-card__stats">
+                    ${statsHTML}
+                    <div class="rating-card__stat rating-card__stat--wide">
+                        <span class="rating-card__stat-val">${anthro}</span>
+                        <span class="rating-card__stat-key">Антропометрия</span>
+                    </div>
+                </div>
+
+                <footer class="rating-card__bottom">
+                    <h3 class="rating-card__name">${esc(player.first_name)} ${esc(player.last_name)}</h3>
+                    <p class="rating-card__sub">${esc(sub)}</p>
+                </footer>
+            </article>
+        </div>
+    `;
+}
+
+/* ============================================================
    CLUBS
    ============================================================ */
 async function fetchClubs() {
@@ -47,7 +210,7 @@ async function fetchClubs() {
 }
 
 /* ============================================================
-   PLAYERS
+   PLAYERS LIST
    ============================================================ */
 async function loadPlayers() {
     const grid = $('#playersResults');
@@ -120,8 +283,13 @@ function renderPlayers(players) {
     }
     noResults?.classList.add('hidden');
 
-    grid.innerHTML = players.map(p => {
+    players.forEach(p => {
         const id = p.player_id ?? p.id;
+        if (id != null) state.playerCache.set(Number(id), p);
+    });
+
+    grid.innerHTML = players.map(p => {
+        const id = Number(p.player_id ?? p.id);
         const isSel = state.selected.has(id);
         const tone = ratingTone(p.total_rating);
 
@@ -130,7 +298,7 @@ function renderPlayers(players) {
                 <div class="p-5">
                     <div class="flex items-start gap-4">
                         <img
-                            src="${esc(p.photo_url) || 'https://via.placeholder.com/80'}"
+                            src="${esc(p.photo_url) || PLACEHOLDER_PHOTO}"
                             alt=""
                             class="w-16 h-16 rounded object-cover bg-gray-100"
                             loading="lazy"
@@ -174,14 +342,14 @@ function renderPlayers(players) {
                         <input
                             type="checkbox"
                             class="w-4 h-4 accent-gray-900"
-                            data-compare="${esc(id)}"
+                            data-compare="${id}"
                             ${isSel ? 'checked' : ''}
                         >
                         Сравнить
                     </label>
                     <button
                         type="button"
-                        data-download="${esc(id)}"
+                        data-download="${id}"
                         class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900 hover:text-red-600"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
@@ -277,78 +445,65 @@ function updateCompareUI() {
 }
 
 function togglePlayer(id) {
-    if (state.selected.has(id)) state.selected.delete(id);
-    else state.selected.add(id);
+    const n = Number(id);
+    if (state.selected.has(n)) state.selected.delete(n);
+    else state.selected.add(n);
     updateCompareUI();
-    loadPlayers(); // перерисовать карточки (checked / рамка)
+    loadPlayers();
 }
 
 async function renderComparison() {
     const grid = $('#comparisonGrid');
     if (!grid || state.selected.size < 2) return;
 
-    grid.innerHTML = Array.from({ length: state.selected.size }).map(() => `
-        <div class="border border-gray-200 rounded p-6 bg-white">
-            <div class="space-y-3">
-                <div class="h-4 w-2/3 bg-gray-100 rounded animate-pulse"></div>
-                <div class="h-3 w-1/2 bg-gray-100 rounded animate-pulse"></div>
+    await logoReady;
+
+    const ids = Array.from(state.selected);
+
+    // Скелетон
+    grid.innerHTML = ids.map(() => `
+        <div class="rating-card-wrap" style="opacity:.5">
+            <div class="rating-card rating-card--obsidian" style="display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4em;">
+                Загрузка…
             </div>
         </div>
     `).join('');
 
     try {
-        const ids = Array.from(state.selected);
-        const players = await Promise.all(
-            ids.map(id => fetch(`${API_BASE}/players/${id}`).then(r => r.json()))
+        const fullPlayers = await Promise.all(
+            ids.map(id => fetch(`${API_BASE}/players/${id}`).then(r => r.ok ? r.json() : null).catch(() => null))
         );
 
-        grid.innerHTML = players.map(p => {
-            const birthYear = p.birth_date ? new Date(p.birth_date).getFullYear() : null;
-            const age = birthYear ? new Date().getFullYear() - birthYear : '—';
-            const foot = p.preferred_foot === 'left' ? 'Левая' : 'Правая';
-            const gender = p.gender === 'male' ? 'Мужской' : 'Женский';
+        const merged = ids.map((id, i) => {
+            const ranking = state.playerCache.get(Number(id)) || {};
+            const full = fullPlayers[i] || {};
+            return {
+                ...ranking,
+                preferred_foot: full.preferred_foot || ranking.preferred_foot,
+                club_name: ranking.club_name || full.club?.name,
+                photo_url: ranking.photo_url || full.photo_url,
+            };
+        });
 
-            return `
-                <article class="border border-gray-200 rounded p-6 bg-white">
-                    <header class="flex items-start gap-4 pb-4 border-b border-gray-100">
-                        <img
-                            src="${esc(p.photo_url) || 'https://via.placeholder.com/64'}"
-                            alt=""
-                            class="w-14 h-14 rounded object-cover bg-gray-100"
-                        >
-                        <div class="min-w-0">
-                            <h3 class="font-bold leading-tight truncate">
-                                ${esc(p.first_name)} ${esc(p.last_name)}
-                            </h3>
-                            <p class="text-xs text-gray-500 mt-1 truncate">
-                                ${esc(p.club?.name || '— без клуба')}
-                            </p>
-                        </div>
-                    </header>
+        // Предзагружаем фото в data URI — тогда html2canvas не будет ломаться
+        const photos = await Promise.all(merged.map(p => resolvePhoto(p.photo_url)));
 
-                    <dl class="mt-4 space-y-2 text-sm">
-                        <div class="flex justify-between"><dt class="text-gray-500">Возраст</dt><dd class="font-medium tnum">${age} лет</dd></div>
-                        <div class="flex justify-between"><dt class="text-gray-500">Дата рождения</dt><dd class="font-medium tnum">${esc(p.birth_date || '—')}</dd></div>
-                        <div class="flex justify-between"><dt class="text-gray-500">Пол</dt><dd class="font-medium">${gender}</dd></div>
-                        <div class="flex justify-between"><dt class="text-gray-500">Рабочая нога</dt><dd class="font-medium">${foot}</dd></div>
-                    </dl>
-
-                    <button
-                        type="button"
-                        data-remove="${esc(p.id ?? p.player_id)}"
-                        class="mt-5 w-full text-xs font-semibold uppercase tracking-widest text-gray-500 hover:text-red-600 border border-gray-200 hover:border-red-600 rounded py-2 transition-colors"
-                    >
-                        Убрать из сравнения
-                    </button>
-                </article>
-            `;
-        }).join('');
+        grid.innerHTML = merged.map((p, i) => `
+            <div class="flex flex-col items-center gap-3">
+                ${renderRatingCard(p, undefined, { photoUrl: photos[i] })}
+                <button
+                    type="button"
+                    data-remove="${ids[i]}"
+                    class="text-xs font-semibold uppercase tracking-widest text-gray-500 hover:text-red-600 border border-gray-200 hover:border-red-600 rounded px-4 py-2 transition-colors"
+                >
+                    Убрать из сравнения
+                </button>
+            </div>
+        `).join('');
 
         $$('#comparisonGrid [data-remove]').forEach(btn => {
             btn.addEventListener('click', () => {
-                const id = isNaN(Number(btn.dataset.remove))
-                    ? btn.dataset.remove
-                    : Number(btn.dataset.remove);
+                const id = Number(btn.dataset.remove);
                 state.selected.delete(id);
                 updateCompareUI();
                 loadPlayers();
@@ -364,75 +519,86 @@ async function renderComparison() {
 }
 
 /* ============================================================
-   DOWNLOAD CARD
+   DOWNLOAD CARD (PNG)
    ============================================================ */
-async function downloadCard(playerId) {
+const DOWNLOAD_WIDTH = 700;
+// font-size карточки = 2.857cqw → при ширине wrap 700px базовый = 20px
+const DOWNLOAD_BASE_FONT = (DOWNLOAD_WIDTH * 2.857) / 100;
+
+async function downloadCard(player, variant) {
+    await logoReady;
+
+    const vKey = variant || pickVariantByRating(player.total_rating);
+    const photoUrl = await resolvePhoto(player.photo_url);
+
+    const host = document.createElement('div');
+    host.style.cssText = `position:fixed;left:-99999px;top:0;width:${DOWNLOAD_WIDTH}px;pointer-events:none;`;
+    host.innerHTML = renderRatingCard(player, vKey, { photoUrl });
+    document.body.appendChild(host);
+
     try {
-        const res = await fetch(`${API_BASE}/players/${playerId}`);
-        const player = await res.json();
+        // Ждём шрифты (с таймаутом — иначе можно зависнуть)
+        if (document.fonts?.ready) {
+            await Promise.race([
+                document.fonts.ready,
+                new Promise(r => setTimeout(r, 1500)),
+            ]);
+        }
 
-        const birthYear = player.birth_date ? new Date(player.birth_date).getFullYear() : null;
-        const age = birthYear ? new Date().getFullYear() - birthYear : '—';
+        // Ждём все <img> внутри карточки
+        await Promise.all(
+            Array.from(host.querySelectorAll('img')).map(img =>
+                img.complete ? Promise.resolve() : new Promise(r => {
+                    img.addEventListener('load', r, { once: true });
+                    img.addEventListener('error', r, { once: true });
+                    setTimeout(r, 2500);
+                })
+            )
+        );
 
-        const wrap = document.createElement('div');
-        wrap.style.position = 'fixed';
-        wrap.style.left = '-9999px';
-        wrap.style.top = '0';
-        wrap.innerHTML = `
-            <div style="
-                width: 560px;
-                background: #fff;
-                padding: 40px;
-                font-family: 'SF-Pro', system-ui, sans-serif;
-                color: #0b1220;
-                border: 1px solid #e5e7eb;
-            ">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:1px solid #e5e7eb;">
-                    <div>
-                        <div style="font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;color:#d91e2b;">Уральский Футбольный Союз</div>
-                        <div style="font-size:20px;font-weight:700;margin-top:8px;">Карточка игрока</div>
-                    </div>
-                    <div style="font-size:12px;color:#6b7280;">${new Date().toLocaleDateString('ru-RU')}</div>
-                </div>
+        const node = host.querySelector('.rating-card');
+        if (!node) throw new Error('card node not found');
 
-                <div style="display:flex;gap:24px;margin-top:28px;align-items:center;">
-                    <img src="${esc(player.photo_url) || 'https://via.placeholder.com/120'}"
-                         style="width:120px;height:120px;object-fit:cover;border-radius:4px;background:#f3f4f6;">
-                    <div>
-                        <div style="font-size:28px;font-weight:700;line-height:1.1;">${esc(player.first_name)} ${esc(player.last_name)}</div>
-                        <div style="color:#6b7280;margin-top:6px;">${esc(player.club?.name || '—')} · ${age} лет</div>
-                    </div>
-                </div>
+        const canvas = await html2canvas(node, {
+            scale: 2,
+            backgroundColor: null,
+            logging: false,
+            useCORS: true,
+            allowTaint: false,
+            imageTimeout: 4000,
+            removeContainer: true,
+            onclone: (clonedDoc) => {
+                const wrap = clonedDoc.querySelector('.rating-card-wrap');
+                if (wrap) {
+                    wrap.style.maxWidth = DOWNLOAD_WIDTH + 'px';
+                    wrap.style.width    = DOWNLOAD_WIDTH + 'px';
+                }
+                const card = clonedDoc.querySelector('.rating-card');
+                if (card) card.style.fontSize = DOWNLOAD_BASE_FONT + 'px';
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 32px;margin-top:32px;padding-top:24px;border-top:1px solid #e5e7eb;font-size:14px;">
-                    <div><div style="color:#6b7280;font-size:12px;">Дата рождения</div><div style="font-weight:600;">${esc(player.birth_date || '—')}</div></div>
-                    <div><div style="color:#6b7280;font-size:12px;">Пол</div><div style="font-weight:600;">${player.gender === 'male' ? 'Мужской' : 'Женский'}</div></div>
-                    <div><div style="color:#6b7280;font-size:12px;">Рабочая нога</div><div style="font-weight:600;">${player.preferred_foot === 'left' ? 'Левая' : 'Правая'}</div></div>
-                    <div><div style="color:#6b7280;font-size:12px;">Клуб</div><div style="font-weight:600;">${esc(player.club?.name || '—')}</div></div>
-                </div>
+                // Отключаем шум — сильно ускоряет рендер
+                clonedDoc.querySelectorAll('.rating-card__grain').forEach(el => {
+                    el.style.display = 'none';
+                });
+            }
+        });
 
-                <div style="margin-top:32px;padding-top:20px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;">
-                    Сгенерировано автоматически · football-gto.ru
-                </div>
-            </div>
-        `;
-        document.body.appendChild(wrap);
-        const node = wrap.firstElementChild;
+        const safeName = `${player.last_name || 'player'}_${player.first_name || ''}`
+            .trim().replace(/\s+/g, '_').replace(/[^\w\-]+/g, '');
 
-        const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff' });
         const a = document.createElement('a');
-        a.download = `player_${playerId}.png`;
+        a.download = `${safeName}_${vKey}.png`;
         a.href = canvas.toDataURL('image/png');
+        document.body.appendChild(a);
         a.click();
-        wrap.remove();
-    } catch (e) {
-        console.error('[card]', e);
-        alert('Не удалось создать карточку');
+        a.remove();
+    } finally {
+        host.remove();
     }
 }
 
 /* ============================================================
-   EVENTS
+   FILTERS + GRID EVENTS
    ============================================================ */
 function bindFilters() {
     const on = (id, evt, fn) => {
@@ -458,7 +624,6 @@ function bindFilters() {
     });
 }
 
-/** делегирование кликов по сетке игроков */
 function bindGrid() {
     const grid = $('#playersResults');
     if (!grid) return;
@@ -466,16 +631,33 @@ function bindGrid() {
     grid.addEventListener('change', e => {
         const cb = e.target.closest('input[data-compare]');
         if (!cb) return;
-        const raw = cb.dataset.compare;
-        const id = isNaN(Number(raw)) ? raw : Number(raw);
-        togglePlayer(id);
+        togglePlayer(Number(cb.dataset.compare));
     });
 
-    grid.addEventListener('click', e => {
+    grid.addEventListener('click', async e => {
         const btn = e.target.closest('button[data-download]');
         if (!btn) return;
-        const raw = btn.dataset.download;
-        downloadCard(isNaN(Number(raw)) ? raw : Number(raw));
+
+        const id = Number(btn.dataset.download);
+        const player = state.playerCache.get(id);
+        if (!player) {
+            alert('Данные игрока ещё не загружены');
+            return;
+        }
+
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = 'Готовим PNG…';
+
+        try {
+            await downloadCard(player);
+        } catch (err) {
+            console.error('[card]', err);
+            alert('Не удалось создать карточку');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
     });
 }
 

@@ -7,6 +7,7 @@
     <title>Результаты тестирования - Футбольное ГТО</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/custom.css' %}">
     <style>
         .results-hero h1 { letter-spacing: -.02em; }
@@ -19,7 +20,6 @@
             font-size: 14px;
             transition: border-color .15s;
         }
-        header {background-color: white;}
         .filter-input:focus, .filter-select:focus { outline: none; border-color: #0b1220; }
         .results-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
         @media (min-width: 768px)  { .results-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -30,7 +30,7 @@
 </head>
 <body class="bg-gray-50">
     <!-- Шапка такая же, как на главной (можно скопировать) -->
-    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
+    <header class="sticky top-0 z-50 bg-white backdrop-blur-md border-b border-gray-200 shadow-sm">
         <div class="container mx-auto px-4">
             <div class="flex items-center justify-between h-20">
                 <a href="{% url 'index' %}" class="flex items-center gap-3">
