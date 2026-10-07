@@ -10,16 +10,36 @@ from app.schemas.schemas import PaginatedResponse, PlayerCreate, PlayerRankingOu
 
 router = APIRouter(prefix="/players", tags=["Players"])
 
+def parse_age_group(age_group: Optional[str]):
+    """
+    'U6-U7'   → (6, 7)
+    'U8-U9'   → (8, 9)
+    'U14-U15' → (14, 15)
+    'U10'     → (10, 10)
+    None      → None
+    """
+    if not age_group:
+        return None
+    s = age_group.strip().upper().lstrip("U")
+    if "-" in s:
+        a, b = s.split("-", 1)
+        return int(a.lstrip("U")), int(b.lstrip("U"))
+    n = int(s)
+    return n, n
+
 @router.get("/rankings", response_model=PaginatedResponse[PlayerRankingOut])
 def get_players_rankings(
-    age_group: Optional[str] = Query(None, pattern="^U\\d+$"),
+    age_group: Optional[str] = Query(None, pattern=r"^U\d+(?:-U?\d+)?$"),
     club_id: Optional[int] = None,
     gender: Optional[str] = Query(None, pattern="^(male|female)$"),
     search: Optional[str] = None,
-    sort_by: str = Query("total_rating", pattern="^(total_rating|anthropometry|athleticism|speed|agility|dribbling|technique|shots)$"),
+    sort_by: str = Query(
+        "total_rating",
+        pattern="^(total_rating|anthropometry|athleticism|speed|agility|dribbling|technique|shots)$",
+    ),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     query = select(Player)
     if club_id:
@@ -28,44 +48,50 @@ def get_players_rankings(
         query = query.where(Player.gender == gender)
     if search:
         query = query.where(
-            or_(Player.first_name.ilike(f"%{search}%"), Player.last_name.ilike(f"%{search}%"))
+            or_(
+                Player.first_name.ilike(f"%{search}%"),
+                Player.last_name.ilike(f"%{search}%"),
+            )
         )
     players = session.exec(query).all()
 
-    # Определяем возрастную группу для расчёта
-    age_tuple = None
-    if age_group:
-        age_num = int(age_group[1:])
-        age_tuple = (age_num, age_num)  # точный возраст, можно расширить до (age_num-1, age_num) по ТЗ
+    age_range = parse_age_group(age_group)
+    today = date.today()
 
     results = []
     for player in players:
+        age = calculate_age(player.birth_date, today)
+
+        if age_range is not None:
+            min_age, max_age = age_range
+            if not (min_age <= age <= max_age):
+                continue
+
         try:
             ratings = compute_player_ratings(
-                session, player.id,
-                age_group=age_tuple,
-                gender=gender
+                session,
+                player.id,
+                age_group=age_range,
+                gender=gender,
+                as_of_date=today,
             )
-        except Exception as e:
+        except Exception:
             continue
 
-        # Маппинг категорий на поля схемы
         category_map = {
             "Антропометрия": "anthropometry",
             "Атлетизм": "athleticism",
             "Быстрота": "speed",
-            "Координация": "agility",      # в схеме agility
+            "Координация": "agility",
             "Дриблинг": "dribbling",
             "Техника": "technique",
             "Удары": "shots",
         }
         rating_fields = {}
-        for cat_key, cat_value in ratings["category_ratings"].items():
+        for cat_key, cat_value in ratings.get("category_ratings", {}).items():
             field = category_map.get(cat_key)
             if field:
                 rating_fields[field] = round(cat_value, 2)
-
-        age = calculate_age(player.birth_date)
 
         player_data = PlayerRankingOut(
             player_id=player.id,
@@ -75,17 +101,16 @@ def get_players_rankings(
             age=age,
             club_name=player.club.name if player.club else None,
             **rating_fields,
-            total_rating=round(ratings["total_rating"], 2)
+            total_rating=round(ratings.get("total_rating", 0), 2),
         )
         results.append(player_data)
 
-    # Сортировка
-    if sort_by == "total_rating":
-        results.sort(key=lambda x: x.total_rating, reverse=True)
-    else:
-        results.sort(key=lambda x: getattr(x, sort_by, 0), reverse=True)
+    def _sort_value(x):
+        v = getattr(x, sort_by, 0)
+        return v if v is not None else 0
 
-    # Пагинация
+    results.sort(key=_sort_value, reverse=True)
+
     total = len(results)
     start = (page - 1) * size
     end = start + size
@@ -96,7 +121,7 @@ def get_players_rankings(
         total=total,
         page=page,
         size=size,
-        pages=(total + size - 1) // size
+        pages=(total + size - 1) // size,
     )
 
 @router.get("/{player_id}", response_model=Player)

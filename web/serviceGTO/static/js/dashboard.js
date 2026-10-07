@@ -111,7 +111,7 @@ async function fetchPlayers() {
                 ${players.map(p => `
                     <li class="p-4 flex items-center gap-4">
                         <img
-                            src="${esc(p.photo_url) || 'https://via.placeholder.com/40'}"
+                            src="${esc(p.photo_url) || 'https://ekb.football/assets/1174b7ed3d413e356cdd57354dd4a127/65ce616899ddd_640x640.png'}"
                             class="w-10 h-10 rounded object-cover bg-gray-100"
                             loading="lazy"
                             alt=""

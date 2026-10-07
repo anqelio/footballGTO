@@ -238,10 +238,10 @@ async function loadPlayers() {
         size: state.perPage,
         sort_by: state.filters.sort,
     });
-    if (state.filters.age !== 'all')    params.set('age_group', `U${state.filters.age}`);
-    if (state.filters.club !== 'all')   params.set('club_id',   state.filters.club);
-    if (state.filters.gender !== 'all') params.set('gender',    state.filters.gender);
-    if (state.filters.search)           params.set('search',    state.filters.search);
+    if (state.filters.age !== 'all') params.set('age_group', state.filters.age);
+    if (state.filters.club !== 'all') params.set('club_id', state.filters.club);
+    if (state.filters.gender !== 'all') params.set('gender', state.filters.gender);
+    if (state.filters.search) params.set('search', state.filters.search);
 
     try {
         const res = await fetch(`${API_BASE}/players/rankings?${params}`);

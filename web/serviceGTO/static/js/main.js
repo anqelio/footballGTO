@@ -144,7 +144,7 @@ async function loadTopPlayers(ageGroup = 'U9') {
                     </div>
                     <div class="p-5 flex flex-col flex-1">
                         <div class="eyebrow" style="color: var(--muted)">
-                            ${esc(ageGroup)} · Атлетизм
+                            ${esc(ageGroup)} · Игрок
                         </div>
                         <h3 class="font-bold text-lg mt-2 leading-tight">
                             ${esc(p.first_name)} ${esc(p.last_name)}
