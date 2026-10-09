@@ -522,7 +522,7 @@ async function renderComparison() {
    DOWNLOAD CARD (PNG)
    ============================================================ */
 const DOWNLOAD_WIDTH = 700;
-// font-size карточки = 2.857cqw → при ширине wrap 700px базовый = 20px
+const DOWNLOAD_HEIGHT = Math.round(DOWNLOAD_WIDTH * 1.4);
 const DOWNLOAD_BASE_FONT = (DOWNLOAD_WIDTH * 2.857) / 100;
 
 async function downloadCard(player, variant) {
@@ -531,13 +531,29 @@ async function downloadCard(player, variant) {
     const vKey = variant || pickVariantByRating(player.total_rating);
     const photoUrl = await resolvePhoto(player.photo_url);
 
+    const exportUid = `rating-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
     const host = document.createElement('div');
+    host.setAttribute('data-export-uid', exportUid);
     host.style.cssText = `position:fixed;left:-99999px;top:0;width:${DOWNLOAD_WIDTH}px;pointer-events:none;`;
     host.innerHTML = renderRatingCard(player, vKey, { photoUrl });
+
+    const wrapEl = host.querySelector('.rating-card-wrap');
+    const cardEl = host.querySelector('.rating-card');
+
+    if (wrapEl) {
+        wrapEl.style.width    = DOWNLOAD_WIDTH + 'px';
+        wrapEl.style.maxWidth = DOWNLOAD_WIDTH + 'px';
+        wrapEl.style.height   = DOWNLOAD_HEIGHT + 'px';
+        wrapEl.style.position = 'relative';
+    }
+    if (cardEl) {
+        cardEl.style.setProperty('font-size', DOWNLOAD_BASE_FONT + 'px', 'important');
+    }
+
     document.body.appendChild(host);
 
     try {
-        // Ждём шрифты (с таймаутом — иначе можно зависнуть)
         if (document.fonts?.ready) {
             await Promise.race([
                 document.fonts.ready,
@@ -545,7 +561,6 @@ async function downloadCard(player, variant) {
             ]);
         }
 
-        // Ждём все <img> внутри карточки
         await Promise.all(
             Array.from(host.querySelectorAll('img')).map(img =>
                 img.complete ? Promise.resolve() : new Promise(r => {
@@ -556,10 +571,9 @@ async function downloadCard(player, variant) {
             )
         );
 
-        const node = host.querySelector('.rating-card');
-        if (!node) throw new Error('card node not found');
+        if (!cardEl) throw new Error('card node not found');
 
-        const canvas = await html2canvas(node, {
+        const canvas = await html2canvas(cardEl, {
             scale: 2,
             backgroundColor: null,
             logging: false,
@@ -568,16 +582,24 @@ async function downloadCard(player, variant) {
             imageTimeout: 4000,
             removeContainer: true,
             onclone: (clonedDoc) => {
-                const wrap = clonedDoc.querySelector('.rating-card-wrap');
-                if (wrap) {
-                    wrap.style.maxWidth = DOWNLOAD_WIDTH + 'px';
-                    wrap.style.width    = DOWNLOAD_WIDTH + 'px';
-                }
-                const card = clonedDoc.querySelector('.rating-card');
-                if (card) card.style.fontSize = DOWNLOAD_BASE_FONT + 'px';
+                // Ищем ИМЕННО нашу временную карточку по уникальному атрибуту
+                const clonedHost = clonedDoc.querySelector(`[data-export-uid="${exportUid}"]`);
+                if (!clonedHost) return;
 
-                // Отключаем шум — сильно ускоряет рендер
-                clonedDoc.querySelectorAll('.rating-card__grain').forEach(el => {
+                const cw = clonedHost.querySelector('.rating-card-wrap');
+                const cc = clonedHost.querySelector('.rating-card');
+
+                if (cw) {
+                    cw.style.width    = DOWNLOAD_WIDTH  + 'px';
+                    cw.style.maxWidth = DOWNLOAD_WIDTH  + 'px';
+                    cw.style.height   = DOWNLOAD_HEIGHT + 'px';
+                    cw.style.position = 'relative';
+                }
+                if (cc) {
+                    cc.style.setProperty('font-size', DOWNLOAD_BASE_FONT + 'px', 'important');
+                }
+
+                clonedHost.querySelectorAll('.rating-card__grain').forEach(el => {
                     el.style.display = 'none';
                 });
             }

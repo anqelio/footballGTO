@@ -481,3 +481,5 @@ img, svg, video { display: block; max-width: 100%; }
     object-position:left center;
     opacity:.92;
 }
+
+.rating-card--export { font-size: 20px !important; }
