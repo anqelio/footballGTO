@@ -43,3 +43,31 @@
 ```shell
 docker compose -f compose.yaml -f compose.local.yaml down
 ```
+
+## Запуск проекта на production сервере
+Делаем шаг назад в инфраструктуре, упрощаем, чтобы не собирать каждый раз новый образ, пока такое не нужно.
+На production сервере используется `compose.yaml`, а nginx и базы данных запускаются отдельно из проекта `infra/`.
+Код подключается с хоста: `./api:/app` и `./web:/app`. После изменений Python-кода и шаблонов достаточно обновить checkout и перезапустить сервисы:
+```shell
+git pull
+sudo docker compose restart api web
+```
+
+Если обновление содержит миграции или изменения статики, выполните соответствующие команды:
+```shell
+sudo docker compose exec web python manage.py migrate
+sudo docker compose exec web python manage.py collectstatic --noinput
+```
+
+Собранная статика сохраняется в общем volume `football-gto-staticfiles`, который nginx из `infra/` подключает для чтения.
+В локальной конфигурации `volumes: !override` убирает этот volume: локальный nginx передаёт запросы `/static/` в Django.
+
+При изменении `requirements.txt` или Dockerfile необходимо пересобрать образ и пересоздать соответствующий сервис:
+```shell
+sudo docker compose up -d --build api web
+```
+
+После изменения настроек `compose.yaml` или переменных окружения в `.env` примените их с пересозданием контейнеров:
+```shell
+sudo docker compose up -d --force-recreate api web
+```

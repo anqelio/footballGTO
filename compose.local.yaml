@@ -40,12 +40,11 @@ services:
       - ./docker/nginx/config/default.conf:/etc/nginx/templates/default.conf.template:ro
     command: ["nginx", "-g", "daemon off;"]
   api:
-    volumes:
-      - ./api:/app
     depends_on:
       db:
         condition: service_healthy
   web:
+    # Локальный nginx передаёт /static/ в Django; общий volume статики не нужен.
     volumes: !override
       - ./web:/app
     depends_on:

@@ -27,6 +27,8 @@ services:
       args:
         LOCAL_USER_ID_ARG: ${LOCAL_USER_ID}
         LOCAL_GROUP_ID_ARG: ${LOCAL_GROUP_ID}
+    volumes:
+      - ./api:/app
     command:
       [
         "uvicorn",
@@ -45,7 +47,9 @@ services:
       args:
         LOCAL_USER_ID_ARG: ${LOCAL_USER_ID}
         LOCAL_GROUP_ID_ARG: ${LOCAL_GROUP_ID}
+    # Общий volume football-gto-staticfiles нужен для чтения статики nginx-ом из другого репозитория
     volumes:
+      - ./web:/app
       - football-gto-staticfiles:/app/staticfiles
     command:
       ["python", "manage.py", "runserver", "0.0.0.0:8000"]
