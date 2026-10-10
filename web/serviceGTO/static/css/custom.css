@@ -145,6 +145,10 @@ img, svg, video { display: block; max-width: 100%; }
     background: var(--red);
 }
 
+#butTicketBtn {
+    margin-top: 48px;
+}
+
 /* ============ Swiper: Rating ============ */
 .ratingSwiper { padding-bottom: 56px; }
 .ratingSwiper .swiper-pagination { position: static; margin-top: 24px; }
