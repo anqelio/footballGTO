@@ -96,7 +96,7 @@ async function loadTopPlayers(ageGroup = 'U9') {
     if (!container) return;
 
     // skeleton
-    container.innerHTML = Array.from({ length: 3 }).map(() => `
+    container.innerHTML = Array.from({ length: 4 }).map(() => `
         <div class="swiper-slide">
             <div class="border border-gray-200 rounded bg-white overflow-hidden">
                 <div class="aspect-[4/3] bg-gray-100 animate-pulse"></div>
