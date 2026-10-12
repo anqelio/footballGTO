@@ -1,11 +1,14 @@
+import logging
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlmodel import Session, select, func
 from datetime import date
-from typing import List, Optional
+from typing import List
 from app.db.session import get_session
 from app.models.models import Player, Result
 from app.services.rating import calculate_age, compute_player_ratings
 from app.schemas.schemas import TopPlayer, TopProgressPlayer
+
+logger = logging.getLogger(__name__)  
 
 router = APIRouter(prefix="/rankings", tags=["Rankings"])
 
