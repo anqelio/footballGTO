@@ -111,6 +111,11 @@ def compute_player_ratings(
     Рассчитывает рейтинг игрока по всем разделам (включая антропометрию)
     и общий рейтинг (без антропометрии).
     """
+    def _to_float(x):
+        if x is None:
+            return 0.0
+        return float(x)
+
     if as_of_date is None:
         as_of_date = date.today()
 
@@ -185,79 +190,50 @@ def compute_player_ratings(
             player_val = player_results_dict.get(test.id)
             if player_val is None:
                 continue
-            group_vals = group_values_by_test.get(test.id, [])
-            if not group_vals:
+            player_val = _to_float(player_val)
+            group_vals = [_to_float(v) for v in group_values_by_test.get(test.id, [])]
+            if not group_vals or player_val == 0:
                 continue
 
-            is_lower_better = test.unit and ('сек' in test.unit.lower() or 'sec' in test.unit.lower())
-
-            if player_val == 0:
-                continue
+            weight = _to_float(test.weight)
 
             if is_lower_better:
                 min_val = min(group_vals)
-                if min_val == 0:
-                    score = Decimal(0)
-                else:
-                    score = Decimal(100) * min_val / player_val if min_val != 0 else Decimal(0)
+                score = (100.0 * min_val / player_val) if min_val != 0 else 0.0
             else:
                 max_val = max(group_vals)
-                if max_val == 0:
-                    score = Decimal(0)
-                else:
-                    score = Decimal(100) * player_val / max_val if max_val != 0 else Decimal(0)
+                score = (100.0 * player_val / max_val) if max_val != 0 else 0.0
 
-            weighted = score * test.weight
-            section_score += weighted
-            total_weight += test.weight
+            section_score += score * weight
+            total_weight += weight
 
         if total_weight > 0:
-            category_scores[section_name] = float(section_score / total_weight)
+            category_scores[section_name] = section_score / total_weight
 
     # Антропометрия
     anthro_scores = {}
     if player_anthro:
-        group_anthro = get_latest_anthropometry_for_group(
-            session, gender, min_age, max_age, as_of_date
-        )
+        height = _to_float(player_anthro['height'])
+        weight = _to_float(player_anthro['weight'])
+        chest = _to_float(player_anthro['chest'])
 
-        if group_anthro['height'] and group_anthro['weight'] and group_anthro['chest']:
-            height_m = player_anthro['height'] / 100
-            player_bmi = player_anthro['weight'] / (height_m * height_m)
-            player_ikt = player_anthro['height'] - (player_anthro['weight'] + player_anthro['chest'])
+        if height > 0:
+            height_m = height / 100
+            player_bmi = weight / (height_m * height_m)
+            player_ikt = height - (weight + chest)
 
-            group_bmi = []
-            group_ikt = []
+            group_bmi, group_ikt = [], []
             for h, w, c in zip(group_anthro['height'], group_anthro['weight'], group_anthro['chest']):
+                h = _to_float(h); w = _to_float(w); c = _to_float(c)
                 h_m = h / 100
                 if h_m > 0:
                     group_bmi.append(w / (h_m * h_m))
                 group_ikt.append(h - (w + c))
 
-            if group_bmi:
-                min_bmi = min(group_bmi)
-                if min_bmi > 0:
-                    bmi_score = Decimal(100) * min_bmi / player_bmi
-                else:
-                    bmi_score = Decimal(0)
-            else:
-                bmi_score = Decimal(0)
+            bmi_score = (100.0 * min(group_bmi) / player_bmi) if group_bmi and min(group_bmi) > 0 else 0.0
+            ikt_score = (100.0 * player_ikt / max(group_ikt)) if group_ikt and max(group_ikt) > 0 else 0.0
 
-            if group_ikt:
-                max_ikt = max(group_ikt)
-                if max_ikt > 0:
-                    ikt_score = Decimal(100) * player_ikt / max_ikt
-                else:
-                    ikt_score = Decimal(0)
-            else:
-                ikt_score = Decimal(0)
-
-            weight_bmi = Decimal('0.6')
-            weight_ikt = Decimal('0.4')
-            total_anthro_weight = weight_bmi + weight_ikt
-            anthro_total = bmi_score * weight_bmi + ikt_score * weight_ikt
-            if total_anthro_weight > 0:
-                anthro_scores['Антропометрия'] = float(anthro_total / total_anthro_weight)
+            anthro_scores['Антропометрия'] = (bmi_score * 0.6 + ikt_score * 0.4) / 1.0
 
     # Общий рейтинг
     section_weights = {
