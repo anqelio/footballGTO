@@ -180,6 +180,11 @@ class Application(models.Model):
 
 
 class Feedback(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'Новый'),
+        ('processed', 'Обработан'),
+    ]
+
     name = models.CharField(max_length=100, verbose_name='Имя')
     phone = models.CharField(max_length=20, verbose_name='Телефон')
     email = models.CharField(
@@ -190,7 +195,8 @@ class Feedback(models.Model):
         auto_now_add=True, verbose_name='Создан',
     )
     status = models.CharField(
-        max_length=20, default='new', verbose_name='Статус',
+        max_length=20, choices=STATUS_CHOICES,
+        default='new', verbose_name='Статус',
     )
 
     class Meta:
