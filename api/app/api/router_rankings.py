@@ -32,26 +32,26 @@ def top_by_category(
 
     player_scores = []
     for p in players:
-    try:
-        ratings = compute_player_ratings(
-            session, p.id,
-            age_group=(min_age, max_age),
-            gender=gender,
-            as_of_date=today
-        )
-    except Exception as e:
-        logger.error(f"Ошибка расчёта рейтинга игрока {p.id}: {e}", exc_info=True)
-        continue
+        try:
+            ratings = compute_player_ratings(
+                session, p.id,
+                age_group=(min_age, max_age),
+                gender=gender,
+                as_of_date=today
+            )
+        except Exception as e:
+            logger.error(f"Ошибка расчёта рейтинга игрока {p.id}: {e}", exc_info=True)
+            continue
 
-    if not ratings:
-        continue
-    cat = ratings.get("category_ratings", {})
-    if category in cat:
-        player_scores.append({
-            "player": p,
-            "rating": cat[category],
-            "total_rating": ratings.get("total_rating", 0)
-        })
+        if not ratings:
+            continue
+        cat = ratings.get("category_ratings", {})
+        if category in cat:
+            player_scores.append({
+                "player": p,
+                "rating": cat[category],
+                "total_rating": ratings.get("total_rating", 0)
+            })
         if ratings and category in ratings["category_ratings"]:
             player_scores.append({
                 "player": p,
