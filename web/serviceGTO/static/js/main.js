@@ -96,7 +96,7 @@ async function loadTopPlayers(ageGroup = 'U9') {
     if (!container) return;
 
     // skeleton
-    container.innerHTML = Array.from({ length: 4 }).map(() => `
+    container.innerHTML = Array.from({ length: 3 }).map(() => `
         <div class="swiper-slide">
             <div class="border border-gray-200 rounded bg-white overflow-hidden">
                 <div class="aspect-[4/3] bg-gray-100 animate-pulse"></div>
@@ -111,7 +111,7 @@ async function loadTopPlayers(ageGroup = 'U9') {
 
     try {
         const res = await fetch(
-            `${API_BASE}/rankings/top/by-category?category=Атлетизм&age_group=${ageGroup}&gender=male&limit=10`
+            `${API_BASE}/rankings/top/by-category?category=Атлетизм&age_group=${ageGroup}&gender=male&limit=3`
         );
         if (!res.ok) throw new Error('network');
         const players = await res.json();
@@ -187,7 +187,7 @@ function rebuildTopSwiper(count) {
     window.topSwiper = new Swiper('.ratingSwiper', {
         slidesPerView: 1,
         spaceBetween: 20,
-        loop: count > 4,
+        loop: false,
         watchOverflow: true,
         autoHeight: false,
         navigation: {
