@@ -125,7 +125,7 @@ function renderRatingCard(player, variant, opts = {}) {
     const foot     = footLabel(player.preferred_foot);
     const sub      = [club, age, foot].filter(Boolean).join(' · ');
 
-    const photo = opts.photoUrl || player.photo_url || PLACEHOLDER_PHOTO;
+    const photo = opts.photoUrl || player.photo_url;
 
     const statRows = [
         { val: Math.round(player.athleticism ?? 0), key: 'Атлетизм' },
