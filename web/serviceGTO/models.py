@@ -1,5 +1,21 @@
 from django.db import models
 
+class Anthropometry(models.Model):
+    player = models.ForeignKey(
+        Player, on_delete=models.CASCADE,
+        db_column='player_id', verbose_name='Игрок'
+    )
+    test_date = models.DateField(verbose_name='Дата теста')
+    height = models.FloatField(verbose_name='Рост, см')
+    weight = models.FloatField(verbose_name='Вес, кг')
+    chest_circumference = models.FloatField(verbose_name='ОГ на выдохе, см')
+
+    class Meta:
+        db_table = 'anthropometry'
+        managed = False
+        verbose_name = 'Антропометрия'
+        verbose_name_plural = 'Антропометрия'
+
 
 class Club(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name='Название')
