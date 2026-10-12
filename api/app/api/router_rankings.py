@@ -55,12 +55,6 @@ def top_by_category(
                 "rating": cat[category],
                 "total_rating": ratings.get("total_rating", 0)
             })
-        if ratings and category in ratings["category_ratings"]:
-            player_scores.append({
-                "player": p,
-                "rating": ratings["category_ratings"][category],
-                "total_rating": ratings["total_rating"]
-            })
 
     player_scores.sort(key=lambda x: x["rating"], reverse=True)
     top = player_scores[:limit]
