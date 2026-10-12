@@ -46,9 +46,16 @@ INSTALLED_APPS = [
     'serviceGTO.apps.ServicegtoConfig',
 ]
 
+# Internationalization
+LANGUAGE_CODE = 'ru-ru'
+TIME_ZONE = 'Asia/Yekaterinburg'   # или 'UTC' — на твоё усмотрение
+USE_I18N = True
+USE_TZ = True
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
