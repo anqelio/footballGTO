@@ -32,6 +32,18 @@ body {
 
 img, svg, video { display: block; max-width: 100%; }
 
+/* ============ Performance ============ */
+
+/* Предотвращаем CLS: высота пересчитывается от ширины и intrinsic-ratio */
+img {
+    height: auto;
+}
+
+/* Для SVG-логотипов с заданным viewBox — сохраняем пропорции */
+svg {
+    height: auto;
+}
+
 /* ============ Swiper: About slider ============ */
 .about-slider {
     position: relative;

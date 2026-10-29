@@ -132,9 +132,11 @@ async function loadTopPlayers(ageGroup = 'U9') {
                     <div class="relative aspect-[4/3] bg-gray-100 overflow-hidden">
                         <img
                             src="${esc(p.photo_url) || 'https://via.placeholder.com/400x300?text=—'}"
-                            alt="${esc(p.first_name)} ${esc(p.last_name)}"
+                            alt="Фото игрока ${esc(p.first_name)} ${esc(p.last_name)}, рейтинг ${esc(p.rating)}"
                             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            width="400" height="300"
                             loading="lazy"
+                            decoding="async"
                         >
                         <span class="absolute top-3 left-3 text-[11px] font-bold tracking-widest uppercase bg-white/95 text-gray-900 px-2 py-1 rounded-sm">
                             #${i + 1}
@@ -242,9 +244,11 @@ async function loadEvents() {
                     <div class="aspect-[16/10] bg-gray-100 overflow-hidden">
                         <img
                             src="${esc(ev.photo_url) || 'https://via.placeholder.com/600x400?text=—'}"
-                            alt="${esc(ev.title)}"
+                            alt="Фото с мероприятия: ${esc(ev.title)}"
                             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            width="600" height="400"
                             loading="lazy"
+                            decoding="async"
                         >
                     </div>
                     <div class="p-6">

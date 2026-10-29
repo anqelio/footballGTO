@@ -15,10 +15,19 @@
     </script>
     <noscript><div><img src="https://mc.yandex.ru/watch/113801739" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
     <!-- /Yandex.Metrika counter -->
+    <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="https://center.ekb.football/wp-content/themes/barsa/assets/img/favicon.png" type="image/png">
     <title>Результаты тестирования - Футбольное ГТО</title>
+
+    <!-- Preconnect для шрифтов и CDN -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+
+    <link rel="shortcut icon" href="https://center.ekb.football/wp-content/themes/barsa/assets/img/favicon.png" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -49,7 +58,13 @@
             <div class="flex items-center justify-between h-20">
                 <a href="{% url 'index' %}" class="flex items-center gap-3">
                     <div class="logo-header">
-                        <img src="{% static 'img/logo-new.svg' %}" alt="logo" width="200px">
+                        <img
+                            src="{% static 'img/logo-new.svg' %}"
+                            alt="Уральский Футбольный Союз"
+                            width="200"
+                            fetchpriority="high"
+                            decoding="async"
+                        >
                     </div>
                 </a>
                 <nav class="hidden md:flex gap-8"><a href="{% url 'index' %}" class="text-gray-700 hover:text-blue-600">Главная</a><a href="/results" class="text-blue-600 font-semibold">Результаты</a></nav>

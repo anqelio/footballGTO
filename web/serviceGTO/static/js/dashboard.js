@@ -113,8 +113,10 @@ async function fetchPlayers() {
                         <img
                             src="${esc(p.photo_url) || 'https://ekb.football/assets/1174b7ed3d413e356cdd57354dd4a127/65ce616899ddd_640x640.png'}"
                             class="w-10 h-10 rounded object-cover bg-gray-100"
+                            width="40" height="40"
                             loading="lazy"
-                            alt=""
+                            decoding="async"
+                            alt="Фото игрока ${esc(p.first_name)} ${esc(p.last_name)}"
                         >
                         <div class="min-w-0 flex-1">
                             <div class="font-semibold truncate">${esc(p.first_name)} ${esc(p.last_name)}</div>

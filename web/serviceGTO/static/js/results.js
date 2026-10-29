@@ -169,9 +169,9 @@ function renderRatingCard(player, variant, opts = {}) {
                 <div class="rating-card__portrait">
                     <img
                         src="${esc(photo)}"
-                        alt=""
+                        alt="Фото игрока ${esc(player.first_name)} ${esc(player.last_name)}"
                         class="rating-card__photo"
-                        decoding="sync"
+                        decoding="async"
                     >
                 </div>
 
@@ -299,9 +299,11 @@ function renderPlayers(players) {
                     <div class="flex items-start gap-4">
                         <img
                             src="${esc(p.photo_url) || PLACEHOLDER_PHOTO}"
-                            alt=""
+                            alt="Фото игрока ${esc(p.first_name)} ${esc(p.last_name)}"
                             class="w-16 h-16 rounded object-cover bg-gray-100"
+                            width="64" height="64"
                             loading="lazy"
+                            decoding="async"
                         >
                         <div class="min-w-0 flex-1">
                             <h3 class="font-bold text-lg leading-tight truncate">
