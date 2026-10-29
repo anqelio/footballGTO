@@ -25,17 +25,7 @@ function formatDate(iso) {
 
 /** Плавная анимация числа от 0 до target */
 function animateNumber(el, target, duration = 1200) {
-    if (!el) return;
-    const to = Number(target) || 0;
-    const startTime = performance.now();
-
-    function tick(now) {
-        const p = Math.min((now - startTime) / duration, 1);
-        const eased = 1 - Math.pow(1 - p, 3);
-        el.textContent = Math.round(to * eased).toLocaleString('ru-RU');
-        if (p < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
+    return;
 }
 
 /** Кнопка формы: loading-состояние */
