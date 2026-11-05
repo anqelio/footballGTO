@@ -12,6 +12,10 @@ const state = {
     playerCache: new Map(),
 };
 
+const STAT_LABELS = ['Антропометрия', 'Атлетизм', 'Быстрота', 'Ловкость', 'Дриблинг', 'Техника', 'Удары'];
+const STAT_KEYS   = ['anthropometry', 'athleticism', 'speed', 'agility', 'dribbling', 'technique', 'shots'];
+const CMP_COLORS  = ['#d91e2b', '#0f2a5c', '#b8801a', '#0fa06a', '#6d28d9'];
+
 /* ============================================================
    HELPERS
    ============================================================ */
@@ -35,7 +39,6 @@ function debounce(fn, wait = 300) {
    ============================================================ */
 const PLACEHOLDER_PHOTO = '/static/img/noimg.png';
 const LOGO_URL_DEFAULT  = '/static/img/logo-new.svg';
-
 let LOGO_URL = LOGO_URL_DEFAULT;
 
 async function toDataUrl(url) {
@@ -50,7 +53,6 @@ async function toDataUrl(url) {
     });
 }
 
-/** Логотип грузим один раз как data URI */
 const logoReady = (async () => {
     try {
         LOGO_URL = await toDataUrl(LOGO_URL_DEFAULT);
@@ -59,10 +61,10 @@ const logoReady = (async () => {
     }
 })();
 
-/** Кэш фото игроков → data URI */
 const photoCache = new Map();
 async function resolvePhoto(url) {
     const src = url || PLACEHOLDER_PHOTO;
+    if (src.startsWith('data:')) return src;
     if (photoCache.has(src)) return photoCache.get(src);
 
     const p = (async () => {
@@ -90,12 +92,6 @@ const CARD_VARIANTS = {
     obsidian: { label: 'Obsidian', className: 'rating-card--obsidian' },
 };
 
-/**
- * Градация по общему рейтингу:
- *   100–90 → gold
- *    89–80 → emerald
- *    79–0  → obsidian
- */
 function pickVariantByRating(rating) {
     const r = Number(rating) || 0;
     if (r >= 90) return 'gold';
@@ -109,11 +105,6 @@ function footLabel(foot) {
     return '';
 }
 
-/**
- * @param {object} player
- * @param {'gold'|'emerald'|'obsidian'} [variant]
- * @param {object} [opts] — { photoUrl: dataURI }
- */
 function renderRatingCard(player, variant, opts = {}) {
     const vKey = variant || pickVariantByRating(player.total_rating);
     const v = CARD_VARIANTS[vKey] || CARD_VARIANTS.obsidian;
@@ -153,12 +144,7 @@ function renderRatingCard(player, variant, opts = {}) {
                 <header class="rating-card__top">
                     <div class="rating-card__rating">
                         <span class="rating-card__rating-num">${rating}</span>
-                        <img
-                            src="${LOGO_URL}"
-                            alt="УФС"
-                            class="rating-card__logo"
-                            decoding="sync"
-                        >
+                        <img src="${LOGO_URL}" alt="УФС" class="rating-card__logo" decoding="sync">
                     </div>
                     <div class="rating-card__tags">
                         <span class="rating-card__tag">${esc(ageGroup)}</span>
@@ -167,12 +153,7 @@ function renderRatingCard(player, variant, opts = {}) {
                 </header>
 
                 <div class="rating-card__portrait">
-                    <img
-                        src="${esc(photo)}"
-                        alt="Фото игрока ${esc(player.first_name)} ${esc(player.last_name)}"
-                        class="rating-card__photo"
-                        decoding="async"
-                    >
+                    <img src="${esc(photo)}" alt="Фото игрока ${esc(player.first_name)} ${esc(player.last_name)}" class="rating-card__photo" decoding="async">
                 </div>
 
                 <div class="rating-card__stats">
@@ -190,6 +171,76 @@ function renderRatingCard(player, variant, opts = {}) {
             </article>
         </div>
     `;
+}
+
+/* ============================================================
+   RADAR CHART (SVG)
+   ============================================================ */
+function renderRadar(players, size = 320) {
+    const n = STAT_LABELS.length;
+    const cx = size / 2;
+    const cy = size / 2;
+    const maxR = size * 0.34;
+    const levels = [0.25, 0.5, 0.75, 1];
+
+    const polar = (r, i) => {
+        const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+        return [cx + Math.cos(angle) * r, cy + Math.sin(angle) * r];
+    };
+
+    const gridPolygons = levels.map(level => {
+        const pts = Array.from({ length: n }, (_, i) => polar(maxR * level, i));
+        return `<polygon points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="#e5e7eb" stroke-width="1"/>`;
+    }).join('');
+
+    const axes = Array.from({ length: n }, (_, i) => {
+        const [x, y] = polar(maxR, i);
+        return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#e5e7eb" stroke-width="1"/>`;
+    }).join('');
+
+    const labelEls = STAT_LABELS.map((label, i) => {
+        const [x, y] = polar(maxR + 30, i);
+        const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+        const cos = Math.cos(angle);
+        const anchor = Math.abs(cos) < 0.25 ? 'middle' : cos > 0 ? 'start' : 'end';
+        return `<text x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle"
+            font-family="Inter,sans-serif" font-size="10.5" font-weight="600"
+            letter-spacing=".04em" fill="#6b7280">${esc(label)}</text>`;
+    }).join('');
+
+    const dataPolygons = players.map(p => {
+        const pts = p.values.map((val, i) => {
+            const v = Math.min(100, Math.max(0, Number(val) || 0));
+            return polar((v / 100) * maxR, i);
+        });
+        const d = pts.map((pt, i) => (i === 0 ? 'M' : 'L') + pt[0] + ',' + pt[1]).join(' ') + ' Z';
+        return `
+            <path d="${d}" fill="${p.color}" fill-opacity="0.16" stroke="${p.color}" stroke-width="2" stroke-linejoin="round"/>
+            ${pts.map(pt => `<circle cx="${pt[0]}" cy="${pt[1]}" r="3" fill="${p.color}"/>`).join('')}
+        `;
+    }).join('');
+
+    return `<svg viewBox="0 0 ${size} ${size}" preserveAspectRatio="xMidYMid meet">${gridPolygons}${axes}${labelEls}${dataPolygons}</svg>`;
+}
+
+/* ============================================================
+   STAT BARS
+   ============================================================ */
+function renderStatBars(values) {
+    return STAT_LABELS.map((label, i) => {
+        const val = Math.round(values[i] ?? 0);
+        return `
+            <div class="stat-row ${val >= 80 ? 'stat-row--high' : ''}">
+                <div class="stat-row__head">
+                    <span>${esc(label)}</span>
+                    <span class="stat-row__value">${val}</span>
+                </div>
+                <div class="stat-row__track">
+                    <div class="stat-row__fill" style="--w:${val}%"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 /* ============================================================
@@ -226,9 +277,7 @@ async function loadPlayers() {
                 </div>
             </div>
             <div class="mt-5 space-y-2">
-                ${Array.from({ length: 4 }).map(() =>
-                    `<div class="h-3 bg-gray-100 rounded animate-pulse"></div>`
-                ).join('')}
+                ${Array.from({ length: 4 }).map(() => `<div class="h-3 bg-gray-100 rounded animate-pulse"></div>`).join('')}
             </div>
         </div>
     `).join('');
@@ -302,8 +351,7 @@ function renderPlayers(players) {
                             alt="Фото игрока ${esc(p.first_name)} ${esc(p.last_name)}"
                             class="w-16 h-16 rounded object-cover bg-gray-100"
                             width="64" height="64"
-                            loading="lazy"
-                            decoding="async"
+                            loading="lazy" decoding="async"
                         >
                         <div class="min-w-0 flex-1">
                             <h3 class="font-bold text-lg leading-tight truncate">
@@ -314,9 +362,7 @@ function renderPlayers(players) {
                             </p>
                         </div>
                         <div class="text-right shrink-0">
-                            <div class="text-2xl font-bold tnum leading-none ${tone.cls}">
-                                ${esc(p.total_rating ?? '—')}
-                            </div>
+                            <div class="text-2xl font-bold tnum leading-none ${tone.cls}">${esc(p.total_rating ?? '—')}</div>
                             <div class="text-[10px] uppercase tracking-widest text-gray-400 mt-1">${tone.label}</div>
                         </div>
                     </div>
@@ -341,23 +387,15 @@ function renderPlayers(players) {
 
                 <div class="mt-auto px-5 py-4 border-t border-gray-100 flex items-center justify-between">
                     <label class="inline-flex items-center gap-2 text-sm cursor-pointer select-none">
-                        <input
-                            type="checkbox"
-                            class="w-4 h-4 accent-gray-900"
-                            data-compare="${id}"
-                            ${isSel ? 'checked' : ''}
-                        >
+                        <input type="checkbox" class="w-4 h-4 accent-gray-900" data-compare="${id}" ${isSel ? 'checked' : ''}>
                         Сравнить
                     </label>
-                    <button
-                        type="button"
-                        data-download="${id}"
-                        class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900 hover:text-red-600"
-                    >
+                    <button type="button" data-panel="${id}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900 hover:text-red-600">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                         </svg>
-                        Карточка
+                        Профиль
                     </button>
                 </div>
             </article>
@@ -379,17 +417,13 @@ function renderPagination() {
     const push = html => parts.push(html);
 
     const btn = (p, label = p, active = false, disabled = false) => `
-        <button
-            type="button"
-            data-page="${p}"
-            ${disabled ? 'disabled' : ''}
+        <button type="button" data-page="${p}" ${disabled ? 'disabled' : ''}
             class="min-w-[36px] h-9 px-3 border rounded text-sm font-medium tnum transition-colors
-                ${active
-                    ? 'bg-gray-900 text-white border-gray-900'
-                    : disabled
-                        ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                        : 'border-gray-200 text-gray-700 hover:border-gray-900 hover:text-gray-900'}"
-        >${label}</button>`;
+                ${active ? 'bg-gray-900 text-white border-gray-900'
+                        : disabled ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                        : 'border-gray-200 text-gray-700 hover:border-gray-900 hover:text-gray-900'}">
+            ${label}
+        </button>`;
 
     push(btn(page - 1, '←', false, page === 1));
 
@@ -423,12 +457,12 @@ function renderPagination() {
 }
 
 /* ============================================================
-   COMPARISON
+   COMPARISON STATE (checkbox только добавляет/убирает)
    ============================================================ */
 function updateCompareUI() {
     const notice  = $('#compareNotice');
     const countEl = $('#compareCount');
-    const section = $('#comparisonSection');
+    const openBtn = $('#openCompare');
 
     const n = state.selected.size;
     if (countEl) countEl.textContent = n;
@@ -436,13 +470,13 @@ function updateCompareUI() {
     if (n >= 1 && notice) notice.classList.remove('hidden');
     else notice?.classList.add('hidden');
 
-    if (n >= 2 && section) {
-        section.classList.remove('hidden');
-        renderComparison();
-    } else {
-        section?.classList.add('hidden');
-        const g = $('#comparisonGrid');
-        if (g) g.innerHTML = '';
+    if (openBtn) {
+        if (n >= 2) {
+            openBtn.classList.remove('hidden');
+            openBtn.textContent = `Сравнить (${n})`;
+        } else {
+            openBtn.classList.add('hidden');
+        }
     }
 }
 
@@ -454,85 +488,273 @@ function togglePlayer(id) {
     loadPlayers();
 }
 
-async function renderComparison() {
-    const grid = $('#comparisonGrid');
-    if (!grid || state.selected.size < 2) return;
+/* ============================================================
+   PLAYER PANEL — open / close / render
+   ============================================================ */
+let panelOpenId = null;
+
+async function openPlayerPanel(id) {
+    const player = state.playerCache.get(Number(id));
+    if (!player) return;
+
+    const panel = $('#playerPanel');
+    const content = $('#panelContent');
+
+    panelOpenId = Number(id);
+    content.innerHTML = `<div class="panel-loading">Загрузка профиля…</div>`;
+    panel.classList.remove('hidden');
+    panel.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    try {
+        const [full, photo] = await Promise.all([
+            fetch(`${API_BASE}/players/${id}`).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+            resolvePhoto(player.photo_url),
+        ]);
+
+        const merged = {
+            ...player,
+            ...full,
+            club_name: player.club_name || full.club?.name,
+            photo_url: photo,
+        };
+
+        const values = STAT_KEYS.map(k => Math.round(merged[k] ?? 0));
+
+        content.innerHTML = `
+            <div class="player-panel">
+                <div class="player-panel__left">
+                    ${renderRatingCard(merged)}
+                    <div class="player-panel__actions">
+                        <button type="button" class="btn-panel" data-share>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                            </svg>
+                            Поделиться
+                        </button>
+                        <button type="button" class="btn-panel" data-print>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 6 2 18 2 18 9"/>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                                <rect x="6" y="14" width="12" height="8"/>
+                            </svg>
+                            Печать
+                        </button>
+                        <button type="button" class="btn-panel btn-panel--primary" data-dl>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Скачать PNG
+                        </button>
+                    </div>
+                </div>
+
+                <div class="player-panel__right">
+                    <div class="player-panel__head">
+                        <div class="eyebrow">Профиль игрока</div>
+                        <h2>${esc(merged.first_name)} ${esc(merged.last_name)}</h2>
+                        <p>
+                            ${esc(merged.club_name || '— без клуба')}
+                            ${merged.age ? ` · ${esc(merged.age)} лет` : ''}
+                            ${merged.preferred_foot ? ` · ${esc(footLabel(merged.preferred_foot))} нога` : ''}
+                        </p>
+                    </div>
+
+                    <div class="player-panel__radar">
+                        ${renderRadar([{ values, color: '#d91e2b' }], 320)}
+                    </div>
+
+                    <div class="player-panel__bars">
+                        ${renderStatBars(values)}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        bindPanelActions(merged);
+
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            content.classList.add('is-ready');
+        }));
+    } catch (e) {
+        console.error('[panel]', e);
+        content.innerHTML = `<div class="panel-loading">Не удалось загрузить профиль</div>`;
+    }
+}
+
+function closePlayerPanel() {
+    const panel = $('#playerPanel');
+    const content = $('#panelContent');
+    panel?.classList.add('hidden');
+    panel?.setAttribute('aria-hidden', 'true');
+    content?.classList.remove('is-ready');
+    panelOpenId = null;
+    document.body.style.overflow = '';
+}
+
+function bindPanelActions(player) {
+    const content = $('#panelContent');
+    if (!content) return;
+
+    content.querySelector('[data-share]')?.addEventListener('click', () => shareCard(player));
+
+    content.querySelector('[data-print]')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const idle = btn.innerHTML;
+        btn.disabled = true; btn.innerHTML = 'Готовим…';
+        try { await printCard(player); }
+        catch (err) { console.error('[print]', err); alert('Не удалось подготовить печать'); }
+        finally { btn.disabled = false; btn.innerHTML = idle; }
+    });
+
+    content.querySelector('[data-dl]')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const idle = btn.innerHTML;
+        btn.disabled = true; btn.innerHTML = 'Готовим PNG…';
+        try { await downloadCard(player); }
+        catch (err) { console.error('[dl]', err); alert('Не удалось создать карточку'); }
+        finally { btn.disabled = false; btn.innerHTML = idle; }
+    });
+}
+
+/* ============================================================
+   COMPARE MODAL
+   ============================================================ */
+async function openCompareModal() {
+    if (state.selected.size < 2) return;
+
+    const modal = $('#compareModal');
+    const content = $('#compareContent');
+
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    content.innerHTML = `<div class="panel-loading">Загрузка сравнения…</div>`;
 
     await logoReady;
 
     const ids = Array.from(state.selected);
 
-    // Скелетон
-    grid.innerHTML = ids.map(() => `
-        <div class="rating-card-wrap" style="opacity:.5">
-            <div class="rating-card rating-card--obsidian" style="display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4em;">
-                Загрузка…
-            </div>
+    const fullData = await Promise.all(ids.map(async (id) => {
+        const ranking = state.playerCache.get(id) || {};
+        const full = await fetch(`${API_BASE}/players/${id}`)
+            .then(r => r.ok ? r.json() : {}).catch(() => ({}));
+        const merged = {
+            ...ranking,
+            ...full,
+            club_name: ranking.club_name || full.club?.name,
+            photo_url: ranking.photo_url || full.photo_url,
+        };
+        merged._photoData = await resolvePhoto(merged.photo_url);
+        return merged;
+    }));
+
+    const valuesByPlayer = fullData.map(p => STAT_KEYS.map(k => Math.round(p[k] ?? 0)));
+
+    // Radar
+    const radar = renderRadar(
+        fullData.map((p, i) => ({
+            values: valuesByPlayer[i],
+            color: CMP_COLORS[i % CMP_COLORS.length],
+        })),
+        340
+    );
+
+    // Legend
+    const legend = fullData.map((p, i) => `
+        <div class="compare-legend__item" style="--c:${CMP_COLORS[i % CMP_COLORS.length]}">
+            <span class="compare-legend__dot" style="background:${CMP_COLORS[i % CMP_COLORS.length]}"></span>
+            <span>${esc(p.first_name)} ${esc(p.last_name)}</span>
+            <span class="compare-legend__rating">${Math.round(p.total_rating ?? 0)}</span>
         </div>
     `).join('');
 
-    try {
-        const fullPlayers = await Promise.all(
-            ids.map(id => fetch(`${API_BASE}/players/${id}`).then(r => r.ok ? r.json() : null).catch(() => null))
-        );
+    // Cards
+    const cardsHTML = fullData.map((p, i) => `
+        <div class="rating-card-wrap">
+            ${renderRatingCard(p, undefined, { photoUrl: p._photoData })}
+        </div>
+    `).join('');
 
-        const merged = ids.map((id, i) => {
-            const ranking = state.playerCache.get(Number(id)) || {};
-            const full = fullPlayers[i] || {};
-            return {
-                ...ranking,
-                preferred_foot: full.preferred_foot || ranking.preferred_foot,
-                club_name: ranking.club_name || full.club?.name,
-                photo_url: ranking.photo_url || full.photo_url,
-            };
-        });
-
-        // Предзагружаем фото в data URI — тогда html2canvas не будет ломаться
-        const photos = await Promise.all(merged.map(p => resolvePhoto(p.photo_url)));
-
-        grid.innerHTML = merged.map((p, i) => `
-            <div class="flex flex-col items-center gap-3">
-                ${renderRatingCard(p, undefined, { photoUrl: photos[i] })}
-                <button
-                    type="button"
-                    data-remove="${ids[i]}"
-                    class="text-xs font-semibold uppercase tracking-widest text-gray-500 hover:text-red-600 border border-gray-200 hover:border-red-600 rounded px-4 py-2 transition-colors"
-                >
-                    Убрать из сравнения
-                </button>
+    // Stat rows — сгруппированы по показателям
+    const statGroups = STAT_LABELS.map((label, si) => {
+        const rows = fullData.map((p, i) => {
+            const val = valuesByPlayer[i][si];
+            return `
+                <div class="cmp-row">
+                    <span class="cmp-row__name" title="${esc(p.first_name)} ${esc(p.last_name)}">
+                        ${esc(p.first_name)}
+                    </span>
+                    <div class="cmp-row__track">
+                        <div class="cmp-row__fill" style="--w:${val}%; --c:${CMP_COLORS[i % CMP_COLORS.length]}"></div>
+                    </div>
+                    <span class="cmp-row__value">${val}</span>
+                </div>
+            `;
+        }).join('');
+        return `
+            <div class="cmp-stat">
+                <h4 class="cmp-stat__title">${esc(label)}</h4>
+                <div class="cmp-stat__rows">${rows}</div>
             </div>
-        `).join('');
+        `;
+    }).join('');
 
-        $$('#comparisonGrid [data-remove]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = Number(btn.dataset.remove);
-                state.selected.delete(id);
-                updateCompareUI();
-                loadPlayers();
-            });
-        });
-    } catch (e) {
-        console.error('[compare]', e);
-        grid.innerHTML = `
-            <div class="md:col-span-3 border border-dashed border-gray-300 rounded p-8 text-center text-gray-500">
-                Не удалось загрузить сравнение
-            </div>`;
-    }
+    content.innerHTML = `
+        <header class="compare-header">
+            <h2>Сравнение игроков</h2>
+            <p>${fullData.length} ${pluralizePlayers(fullData.length)}</p>
+        </header>
+
+        <div class="compare-radar">
+            <div class="compare-radar__chart">${radar}</div>
+            <div class="compare-legend">${legend}</div>
+        </div>
+
+        <div class="compare-cards">${cardsHTML}</div>
+
+        <div class="compare-stats">${statGroups}</div>
+    `;
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        content.classList.add('is-ready');
+    }));
+}
+
+function pluralizePlayers(n) {
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod10 === 1 && mod100 !== 11) return 'игрок';
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'игрока';
+    return 'игроков';
+}
+
+function closeCompareModal() {
+    const modal = $('#compareModal');
+    const content = $('#compareContent');
+    modal?.classList.add('hidden');
+    modal?.setAttribute('aria-hidden', 'true');
+    content?.classList.remove('is-ready');
+    document.body.style.overflow = '';
 }
 
 /* ============================================================
-   DOWNLOAD CARD (PNG)
+   CARD EXPORT — CANVAS GENERATOR
    ============================================================ */
-const DOWNLOAD_WIDTH = 700;
+const DOWNLOAD_WIDTH  = 700;
 const DOWNLOAD_HEIGHT = Math.round(DOWNLOAD_WIDTH * 1.4);
 const DOWNLOAD_BASE_FONT = (DOWNLOAD_WIDTH * 2.857) / 100;
 
-async function downloadCard(player, variant) {
+async function generateCardCanvas(player, variant) {
     await logoReady;
 
     const vKey = variant || pickVariantByRating(player.total_rating);
     const photoUrl = await resolvePhoto(player.photo_url);
-
     const exportUid = `rating-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     const host = document.createElement('div');
@@ -544,8 +766,8 @@ async function downloadCard(player, variant) {
     const cardEl = host.querySelector('.rating-card');
 
     if (wrapEl) {
-        wrapEl.style.width    = DOWNLOAD_WIDTH + 'px';
-        wrapEl.style.maxWidth = DOWNLOAD_WIDTH + 'px';
+        wrapEl.style.width    = DOWNLOAD_WIDTH  + 'px';
+        wrapEl.style.maxWidth = DOWNLOAD_WIDTH  + 'px';
         wrapEl.style.height   = DOWNLOAD_HEIGHT + 'px';
         wrapEl.style.position = 'relative';
     }
@@ -557,10 +779,7 @@ async function downloadCard(player, variant) {
 
     try {
         if (document.fonts?.ready) {
-            await Promise.race([
-                document.fonts.ready,
-                new Promise(r => setTimeout(r, 1500)),
-            ]);
+            await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]);
         }
 
         await Promise.all(
@@ -575,7 +794,7 @@ async function downloadCard(player, variant) {
 
         if (!cardEl) throw new Error('card node not found');
 
-        const canvas = await html2canvas(cardEl, {
+        return await html2canvas(cardEl, {
             scale: 2,
             backgroundColor: null,
             logging: false,
@@ -584,40 +803,90 @@ async function downloadCard(player, variant) {
             imageTimeout: 4000,
             removeContainer: true,
             onclone: (clonedDoc) => {
-                // Ищем ИМЕННО нашу временную карточку по уникальному атрибуту
                 const clonedHost = clonedDoc.querySelector(`[data-export-uid="${exportUid}"]`);
                 if (!clonedHost) return;
-
                 const cw = clonedHost.querySelector('.rating-card-wrap');
                 const cc = clonedHost.querySelector('.rating-card');
-
                 if (cw) {
                     cw.style.width    = DOWNLOAD_WIDTH  + 'px';
                     cw.style.maxWidth = DOWNLOAD_WIDTH  + 'px';
                     cw.style.height   = DOWNLOAD_HEIGHT + 'px';
                     cw.style.position = 'relative';
                 }
-                if (cc) {
-                    cc.style.setProperty('font-size', DOWNLOAD_BASE_FONT + 'px', 'important');
-                }
-
-                clonedHost.querySelectorAll('.rating-card__grain').forEach(el => {
-                    el.style.display = 'none';
-                });
+                if (cc) cc.style.setProperty('font-size', DOWNLOAD_BASE_FONT + 'px', 'important');
+                clonedHost.querySelectorAll('.rating-card__grain').forEach(el => { el.style.display = 'none'; });
             }
         });
-
-        const safeName = `${player.last_name || 'player'}_${player.first_name || ''}`
-            .trim().replace(/\s+/g, '_').replace(/[^\w\-]+/g, '');
-
-        const a = document.createElement('a');
-        a.download = `${safeName}_${vKey}.png`;
-        a.href = canvas.toDataURL('image/png');
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
     } finally {
         host.remove();
+    }
+}
+
+async function downloadCard(player, variant) {
+    const canvas = await generateCardCanvas(player, variant);
+    const vKey = variant || pickVariantByRating(player.total_rating);
+    const safeName = `${player.last_name || 'player'}_${player.first_name || ''}`
+        .trim().replace(/\s+/g, '_').replace(/[^\w\-]+/g, '');
+
+    const a = document.createElement('a');
+    a.download = `${safeName}_${vKey}.png`;
+    a.href = canvas.toDataURL('image/png');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+}
+
+async function printCard(player) {
+    const canvas = await generateCardCanvas(player);
+    const dataUrl = canvas.toDataURL('image/png');
+    const win = window.open('', '_blank');
+    if (!win) { alert('Разрешите всплывающие окна для печати'); return; }
+    win.document.write(`
+        <!DOCTYPE html><html><head>
+        <title>Печать — ${esc(player.first_name)} ${esc(player.last_name)}</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f5f5f5; padding: 20px; }
+            img { max-width: 100%; max-height: calc(100vh - 40px); display: block; }
+            @media print {
+                body { background: #fff; padding: 0; }
+                img { max-height: 100vh; }
+            }
+        </style></head>
+        <body><img src="${dataUrl}" onload="setTimeout(() => { window.print(); }, 200);"></body>
+        </html>
+    `);
+    win.document.close();
+}
+
+async function shareCard(player) {
+    try {
+        const canvas = await generateCardCanvas(player);
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+        if (!blob) throw new Error('no blob');
+        const safeName = `${player.last_name || 'player'}-${player.first_name || ''}`
+            .trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
+        const file = new File([blob], `${safeName}.png`, { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: `${player.first_name} ${player.last_name} — Футбольное ГТО`,
+                text: `Профиль игрока: ${player.first_name} ${player.last_name}`,
+            });
+        } else {
+            await navigator.clipboard.writeText(window.location.href);
+            alert('Ссылка на результаты скопирована в буфер обмена');
+        }
+    } catch (e) {
+        if (e.name === 'AbortError') return;
+        console.error('[share]', e);
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            alert('Ссылка скопирована');
+        } catch {
+            alert('Не удалось поделиться');
+        }
     }
 }
 
@@ -645,7 +914,10 @@ function bindFilters() {
         state.selected.clear();
         updateCompareUI();
         loadPlayers();
+        closeCompareModal();
     });
+
+    on('openCompare', 'click', openCompareModal);
 }
 
 function bindGrid() {
@@ -658,30 +930,28 @@ function bindGrid() {
         togglePlayer(Number(cb.dataset.compare));
     });
 
-    grid.addEventListener('click', async e => {
-        const btn = e.target.closest('button[data-download]');
+    grid.addEventListener('click', e => {
+        const btn = e.target.closest('button[data-panel]');
         if (!btn) return;
+        openPlayerPanel(Number(btn.dataset.panel));
+    });
+}
 
-        const id = Number(btn.dataset.download);
-        const player = state.playerCache.get(id);
-        if (!player) {
-            alert('Данные игрока ещё не загружены');
-            return;
-        }
+/* ============================================================
+   GLOBAL CLOSE HANDLERS
+   ============================================================ */
+function bindModalClosers() {
+    document.addEventListener('click', e => {
+        if (e.target.closest('[data-close-panel]')) closePlayerPanel();
+        if (e.target.closest('[data-close-compare]')) closeCompareModal();
+    });
 
-        const originalHTML = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = 'Готовим PNG…';
-
-        try {
-            await downloadCard(player);
-        } catch (err) {
-            console.error('[card]', err);
-            alert('Не удалось создать карточку');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalHTML;
-        }
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        const panel = $('#playerPanel');
+        const compare = $('#compareModal');
+        if (panel && !panel.classList.contains('hidden')) closePlayerPanel();
+        else if (compare && !compare.classList.contains('hidden')) closeCompareModal();
     });
 }
 
@@ -695,6 +965,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPlayers();
     bindFilters();
     bindGrid();
+    bindModalClosers();
 
     $('#menuToggle')?.addEventListener('click',
         () => $('#mobileMenu')?.classList.toggle('hidden'));
