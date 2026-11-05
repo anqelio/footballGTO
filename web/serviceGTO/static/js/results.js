@@ -328,77 +328,86 @@ function renderPlayers(players) {
         if (id != null) state.playerCache.set(Number(id), p);
     });
 
+    const currentYear = new Date().getFullYear();
+
     grid.innerHTML = players.map(p => {
         const id = Number(p.player_id ?? p.id);
         const isSel = state.selected.has(id);
-        const tone = ratingTone(p.total_rating);
 
-        // Прогресс-бары вместо числовых значений
-        const statRows = [
-            ['Антропометрия', p.anthropometry],
-            ['Атлетизм',      p.athleticism],
-            ['Быстрота',      p.speed],
-            ['Ловкость',      p.agility],
-            ['Дриблинг',      p.dribbling],
-            ['Техника',       p.technique],
-            ['Удары',         p.shots],
+        const rating    = Math.round(Number(p.total_rating) || 0);
+        const ageGroup  = p.age ? `U${p.age}` : '—';
+        const birthYear = p.age ? currentYear - p.age : '—';
+        const team      = p.club_name || 'Без команды';
+
+        const skills = [
+            { abbr: 'PHY', value: Math.round(Number(p.athleticism) || 0) },
+            { abbr: 'PAC', value: Math.round(Number(p.speed)       || 0) },
+            { abbr: 'AGI', value: Math.round(Number(p.agility)     || 0) },
+            { abbr: 'DRI', value: Math.round(Number(p.dribbling)   || 0) },
+            { abbr: 'SHO', value: Math.round(Number(p.shots)       || 0) },
         ];
 
-        const pcsHTML = statRows.map(([label, raw]) => {
-            const v = Math.round(Number(raw) || 0);
-            return `
-                <div class="pcs ${v >= 80 ? 'pcs--high' : ''}">
-                    <div class="pcs__head">
-                        <span class="pcs__label">${label}</span>
-                        <span class="pcs__value">${raw != null ? v : '—'}</span>
-                    </div>
-                    <div class="pcs__track">
-                        <div class="pcs__fill" style="--w:${v}%"></div>
-                    </div>
+        const statsHTML = skills.map((s, i) => `
+            <div class="pmc__stat">
+                <div class="pmc__stat-label">${s.abbr}</div>
+                <div class="pmc__stat-bar">
+                    <div class="pmc__stat-fill" style="--w:${s.value}%; --i:${i}"></div>
                 </div>
-            `;
-        }).join('');
+                <div class="pmc__stat-value">${s.value}</div>
+            </div>
+        `).join('');
+
+        const photo = p.photo_url || PLACEHOLDER_PHOTO;
 
         return `
-            <article class="border rounded bg-white flex flex-col transition-colors ${isSel ? 'border-gray-900 ring-1 ring-gray-900' : 'border-gray-200 hover:border-gray-400'}">
-                <div class="p-5">
-                    <div class="flex items-start gap-4">
-                        <img
-                            src="${esc(p.photo_url) || PLACEHOLDER_PHOTO}"
-                            alt="Фото игрока ${esc(p.first_name)} ${esc(p.last_name)}"
-                            class="w-16 h-16 rounded object-cover bg-gray-100"
-                            width="64" height="64" loading="lazy" decoding="async"
-                        >
-                        <div class="min-w-0 flex-1">
-                            <h3 class="font-bold text-lg leading-tight truncate">
-                                ${esc(p.first_name)} ${esc(p.last_name)}
-                            </h3>
-                            <p class="text-sm text-gray-500 mt-1 truncate">
-                                ${esc(p.club_name || '— без клуба')} · ${esc(p.age)} лет
-                            </p>
+            <article class="pmc ${isSel ? 'is-selected' : ''}">
+                <div class="pmc__top">
+                    <div class="pmc__badges">
+                        <div class="pmc__badges-row">
+                            <span class="pmc__rating">${rating}</span>
+                            <span class="pmc__age">${esc(ageGroup)}</span>
                         </div>
-                        <div class="text-right shrink-0">
-                            <div class="text-2xl font-bold tnum leading-none ${tone.cls}">${esc(p.total_rating ?? '—')}</div>
-                            <div class="text-[10px] uppercase tracking-widest text-gray-400 mt-1">${tone.label}</div>
+                        <div class="pmc__badges-row">
+                            <span class="pmc__year">${birthYear}</span>
                         </div>
                     </div>
-
-                    <div class="pcs-group">${pcsHTML}</div>
+                    <div class="pmc__actions">
+                        <button type="button"
+                                class="pmc__icon-btn ${isSel ? 'is-active' : ''}"
+                                data-compare="${id}"
+                                aria-label="Сравнить"
+                                aria-pressed="${isSel}">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="13" height="13" rx="2"/>
+                                <rect x="8" y="8" width="13" height="13" rx="2"/>
+                            </svg>
+                        </button>
+                        <button type="button"
+                                class="pmc__icon-btn"
+                                data-panel="${id}"
+                                aria-label="Открыть профиль">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-
-                <div class="mt-auto px-5 py-4 border-t border-gray-100 flex items-center justify-between">
-                    <label class="inline-flex items-center gap-2 text-sm cursor-pointer select-none">
-                        <input type="checkbox" class="w-4 h-4 accent-gray-900" data-compare="${id}" ${isSel ? 'checked' : ''}>
-                        Сравнить
-                    </label>
-                    <button type="button" data-panel="${id}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900 hover:text-red-600">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                        </svg>
-                        Профиль
-                    </button>
+                <div class="pmc__main">
+                    <div class="pmc__photo">
+                        <img src="${esc(photo)}"
+                             alt="Фото игрока ${esc(p.first_name)} ${esc(p.last_name)}"
+                             width="48" height="48"
+                             loading="lazy" decoding="async">
+                    </div>
+                    <div class="pmc__info">
+                        <div class="pmc__name">${esc(p.first_name)} ${esc(p.last_name)}</div>
+                        <div class="pmc__team" title="${esc(team)}">${esc(team)}</div>
+                    </div>
                 </div>
+                <div class="pmc__stats">${statsHTML}</div>
             </article>
         `;
     }).join('');
@@ -475,12 +484,18 @@ function updateCompareUI() {
     }
 }
 
-function togglePlayer(id) {
+function togglePlayer(id, btnEl) {
     const n = Number(id);
     if (state.selected.has(n)) state.selected.delete(n);
     else state.selected.add(n);
     updateCompareUI();
-    loadPlayers();
+
+    if (btnEl) {
+        const isSel = state.selected.has(n);
+        btnEl.classList.toggle('is-active', isSel);
+        btnEl.setAttribute('aria-pressed', isSel ? 'true' : 'false');
+        btnEl.closest('.pmc')?.classList.toggle('is-selected', isSel);
+    }
 }
 
 /* ============================================================
@@ -991,15 +1006,15 @@ function bindFilters() {
 function bindGrid() {
     const grid = $('#playersResults');
     if (!grid) return;
-    grid.addEventListener('change', e => {
-        const cb = e.target.closest('input[data-compare]');
-        if (!cb) return;
-        togglePlayer(Number(cb.dataset.compare));
-    });
+
     grid.addEventListener('click', e => {
-        const btn = e.target.closest('button[data-panel]');
-        if (!btn) return;
-        openPlayerPanel(Number(btn.dataset.panel));
+        const compareBtn = e.target.closest('[data-compare]');
+        if (compareBtn) {
+            togglePlayer(Number(compareBtn.dataset.compare), compareBtn);
+            return;
+        }
+        const panelBtn = e.target.closest('[data-panel]');
+        if (panelBtn) openPlayerPanel(Number(panelBtn.dataset.panel));
     });
 }
 
