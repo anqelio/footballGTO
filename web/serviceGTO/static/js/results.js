@@ -1009,8 +1009,6 @@ async function openCompareModal() {
             <p>${n} ${pluralizePlayers(n)} · наведите на точку диаграммы или раскройте показатель ниже</p>
         </header>
 
-        <section class="compare-cards">${cardsHTML}</section>
-
         <section class="cmp-radar-wrap" id="cmpRadarWrap">
             <div class="cmp-radar">
                 ${renderCompareRadar(radarPlayers, 460)}
