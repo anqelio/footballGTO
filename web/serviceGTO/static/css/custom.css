@@ -1137,24 +1137,33 @@ svg {
 .pmc__icon-btn.is-active { color: var(--red); background: #fef2f2; }
 .pmc__icon-btn.is-active:hover { color: #b91c1c; background: #fee2e2; }
 
-/* Фото + имя + команда */
+/* Фото + имя + команда — по центру */
 .pmc__main {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 14px;
+    text-align: center;
+    gap: 10px;
     min-width: 0;
+    padding: 2px 0 4px;
 }
 .pmc__photo {
-    width: 48px; height: 48px;
-    min-width: 48px;
+    width: 64px; height: 64px;
+    min-width: 64px;
     border-radius: 50%;
     overflow: hidden;
     background: #f3f4f6;
     box-shadow: 0 0 0 2px #fff, 0 0 0 3px #f1f5f9;
+    transition: box-shadow .25s ease;
+}
+.pmc:hover .pmc__photo {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px #e5e7eb;
 }
 .pmc__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
 .pmc__info {
     min-width: 0;
+    max-width: 100%;
     display: flex; flex-direction: column; gap: 3px;
 }
 .pmc__name {

@@ -398,9 +398,9 @@ function renderPlayers(players) {
                 <div class="pmc__main">
                     <div class="pmc__photo">
                         <img src="${esc(photo)}"
-                             alt="Фото игрока ${esc(p.first_name)} ${esc(p.last_name)}"
-                             width="48" height="48"
-                             loading="lazy" decoding="async">
+                            alt="Фото игрока ${esc(p.first_name)} ${esc(p.last_name)}"
+                            width="64" height="64"
+                            loading="lazy" decoding="async">
                     </div>
                     <div class="pmc__info">
                         <div class="pmc__name">${esc(p.first_name)} ${esc(p.last_name)}</div>
