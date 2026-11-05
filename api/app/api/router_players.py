@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from app.core.cache import cache_get, cache_set, cache_invalidate
 from sqlmodel import Session, select, func, or_
+from sqlalchemy.orm import selectinload
 from typing import Optional, List
 from app.db.session import get_session
 from app.models.models import Player, Club
@@ -41,7 +43,12 @@ def get_players_rankings(
     size: int = Query(20, ge=1, le=100),
     session: Session = Depends(get_session),
 ):
-    query = select(Player)
+    key = f"rankings:{age_group or '-'}:{club_id or '-'}:{gender or '-'}:{search or '-'}:{sort_by}:{page}:{size}"
+    cached = cache_get(key)
+    if cached is not None:
+        return cached
+
+    query = select(Player).options(selectinload(Player.club))
     if club_id:
         query = query.where(Player.club_id == club_id)
     if gender:
@@ -116,13 +123,13 @@ def get_players_rankings(
     end = start + size
     paginated_items = results[start:end]
 
-    return PaginatedResponse(
+     result = PaginatedResponse(
         items=paginated_items,
-        total=total,
-        page=page,
-        size=size,
+        total=total, page=page, size=size,
         pages=(total + size - 1) // size,
     )
+    cache_set(key, result, ttl=300)
+    return result
 
 @router.get("/{player_id}", response_model=Player)
 def get_player(player_id: int, session: Session = Depends(get_session)):
@@ -142,6 +149,10 @@ def create_player(player: PlayerCreate, session: Session = Depends(get_session),
     session.add(db_player)
     session.commit()
     session.refresh(db_player)
+    cache_invalidate("players:")
+    cache_invalidate("rankings:")
+    cache_invalidate("top:")
+    return db_player
     return db_player
 
 @router.get("/", response_model=PaginatedResponse[Player])
@@ -153,7 +164,7 @@ def list_players(
     session: Session = Depends(get_session)
 ):
     offset = (page - 1) * size
-    query = select(Player)
+    query = select(Player).options(selectinload(Player.club))
     if club_id:
         query = query.where(Player.club_id == club_id)
     if search:
@@ -189,6 +200,8 @@ def update_player(player_id: int, player_update: PlayerCreate, session: Session 
     session.add(player)
     session.commit()
     session.refresh(player)
+    cache_invalidate("rankings:")
+    cache_invalidate("top:")
     return player
 
 @router.delete("/{player_id}")
@@ -198,4 +211,6 @@ def delete_player(player_id: int, session: Session = Depends(get_session), curre
         raise HTTPException(status_code=404, detail="Player not found")
     session.delete(player)
     session.commit()
+    cache_invalidate("rankings:")
+    cache_invalidate("top:")
     return {"ok": True}

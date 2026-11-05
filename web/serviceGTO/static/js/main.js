@@ -67,22 +67,24 @@ function showFormMessage(form, type, text) {
    STATS — кол-во игроков и клубов
    ============================================================ */
 async function loadStats() {
+    const cached = JSON.parse(localStorage.getItem('stats_cache') || '{}');
+    animateNumber($('#statParticipants'), cached.players ?? 182);
+    animateNumber($('#statClubs'), cached.clubs ?? 15);
+
     try {
         const [playersRes, clubsRes] = await Promise.all([
-            fetch(`${API_BASE}/players/rankings?page=1&size=1`),
-            fetch(`${API_BASE}/clubs/?page=1&size=1`)
+            fetch(`${API_BASE}/players/rankings?page=1&size=1`).then(r => r.json()).catch(() => null),
+            fetch(`${API_BASE}/clubs/?page=1&size=1`).then(r => r.json()).catch(() => null),
         ]);
-
-        if (playersRes.ok) {
-            const total = 182;
-            animateNumber($('#statParticipants'), total);
-        }
-        if (clubsRes.ok) {
-            const total = 15;
-            animateNumber($('#statClubs'), total);
-        }
+        const fresh = {
+            players: playersRes?.total ?? cached.players ?? 182,
+            clubs:   clubsRes?.total   ?? cached.clubs   ?? 15,
+        };
+        localStorage.setItem('stats_cache', JSON.stringify(fresh));
+        animateNumber($('#statParticipants'), fresh.players);
+        animateNumber($('#statClubs'), fresh.clubs);
     } catch (e) {
-        console.error('[stats]', e);
+        console.warn('[stats] fallback to cached', e);
     }
 }
 

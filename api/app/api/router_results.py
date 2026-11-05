@@ -22,6 +22,8 @@ def create_result(result: ResultCreate, session: Session = Depends(get_session),
     session.add(db_result)
     session.commit()
     session.refresh(db_result)
+    cache_invalidate("rankings:")
+    cache_invalidate("top:")
     return db_result
 
 @router.get("/", response_model=PaginatedResponse[Result])
@@ -74,6 +76,8 @@ def update_result(result_id: int, result_update: ResultCreate, session: Session 
     session.add(result)
     session.commit()
     session.refresh(result)
+    cache_invalidate("rankings:")
+    cache_invalidate("top:")
     return result
 
 @router.delete("/{result_id}")
@@ -83,4 +87,6 @@ def delete_result(result_id: int, session: Session = Depends(get_session), curre
         raise HTTPException(status_code=404, detail="Result not found")
     session.delete(result)
     session.commit()
+    cache_invalidate("rankings:")
+    cache_invalidate("top:")
     return {"ok": True}

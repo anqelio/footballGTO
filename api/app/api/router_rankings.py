@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlmodel import Session, select, func
 from datetime import date
 from typing import List
+from app.core.cache import cache_get, cache_set
 from app.db.session import get_session
 from app.models.models import Player, Result
 from app.services.rating import calculate_age, compute_player_ratings
@@ -11,6 +12,8 @@ from app.schemas.schemas import TopPlayer, TopProgressPlayer
 logger = logging.getLogger(__name__)  
 
 router = APIRouter(prefix="/rankings", tags=["Rankings"])
+
+CACHE_TTL = 300
 
 @router.get("/top/by-category", response_model=List[TopPlayer])
 def top_by_category(
@@ -24,7 +27,12 @@ def top_by_category(
     if age_group not in age_map:
         raise HTTPException(400, "Invalid age_group")
     min_age, max_age = age_map[age_group]
-
+    
+    cache_key = f"rankings:top_category:{category}:{age_group}:{gender}:{limit}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+    
     today = date.today()
     players = session.exec(
         select(Player).where(
@@ -59,7 +67,7 @@ def top_by_category(
     player_scores.sort(key=lambda x: x["rating"], reverse=True)
     top = player_scores[:limit]
 
-    return [
+    result = [
         TopPlayer(
             player_id=item["player"].id,
             first_name=item["player"].first_name,
@@ -67,10 +75,14 @@ def top_by_category(
             photo_url=item["player"].photo_url,
             age=calculate_age(item["player"].birth_date, today),
             rating=round(item["rating"], 2),
-            total_rating=round(item["total_rating"], 2)
+            total_rating=round(item["total_rating"], 2),
         )
         for item in top
     ]
+
+    # 4) Кэшируем
+    cache_set(cache_key, result, ttl=CACHE_TTL)
+    return result
 
 
 @router.get("/top/by-progress", response_model=List[TopProgressPlayer])
