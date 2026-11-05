@@ -457,11 +457,50 @@ function initBuyTicket() {
 }
 
 /* ============================================================
+   REVEAL ON SCROLL
+   ============================================================ */
+function initReveal() {
+    const add = el => {
+        if (!el) return;
+        el.classList.add('reveal');
+        io.observe(el);
+    };
+    const els = $$('.reveal');
+    if (!els.length && !document.querySelector('#eventsGrid, #topPlayersCarousel')) return;
+
+    if (!('IntersectionObserver' in window)) {
+        $$('.reveal').forEach(el => el.classList.add('is-visible'));
+        return;
+    }
+
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                io.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+    $$('.reveal').forEach(el => io.observe(el));
+
+    const mo = new MutationObserver(muts => {
+        muts.forEach(m => m.addedNodes.forEach(node => {
+            if (node.nodeType !== 1) return;
+            if (node.matches?.('.reveal')) io.observe(node);
+            node.querySelectorAll?.('.reveal').forEach(el => io.observe(el));
+        }));
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+}
+
+/* ============================================================
    BOOTSTRAP
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
     if (window.AOS) AOS.init({ duration: 700, once: true, offset: 60 });
 
+    initReveal();
     initMobileMenu();
     initAboutSlider();
     initVideoModal();
