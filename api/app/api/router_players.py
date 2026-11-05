@@ -123,7 +123,7 @@ def get_players_rankings(
     end = start + size
     paginated_items = results[start:end]
 
-     result = PaginatedResponse(
+    result = PaginatedResponse(
         items=paginated_items,
         total=total, page=page, size=size,
         pages=(total + size - 1) // size,
