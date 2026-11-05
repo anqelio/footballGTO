@@ -14,9 +14,8 @@ const state = {
 
 const STAT_LABELS = ['Антропометрия', 'Атлетизм', 'Быстрота', 'Ловкость', 'Дриблинг', 'Техника', 'Удары'];
 const STAT_KEYS   = ['anthropometry', 'athleticism', 'speed', 'agility', 'dribbling', 'technique', 'shots'];
-const CMP_COLORS  = ['#d91e2b', '#0f2a5c', '#b8801a', '#0fa06a', '#6d28d9'];
+const CMP_COLORS  = ['#d91e2b', '#0f2a5c', '#b8801a', '#0fa06a', '#6d28d9', '#0891b2', '#db2777'];
 
-/* Маппинг русских названий секций ↔ англ. ключи */
 const SECTION_RU = {
     anthropometry: 'Антропометрия',
     athleticism:   'Атлетизм',
@@ -177,7 +176,7 @@ function renderRatingCard(player, variant, opts = {}) {
 }
 
 /* ============================================================
-   RADAR CHART (SVG) — для панели игрока
+   RADAR CHART — single player (panel)
    ============================================================ */
 function renderRadar(players, size = 320) {
     const n = STAT_LABELS.length;
@@ -216,6 +215,118 @@ function renderRadar(players, size = 320) {
         `;
     }).join('');
     return `<svg viewBox="0 0 ${size} ${size}" preserveAspectRatio="xMidYMid meet">${gridPolygons}${axes}${labelEls}${dataPolygons}</svg>`;
+}
+
+/* ============================================================
+   RADAR CHART — сравнение (с hover-подсказками)
+   ============================================================ */
+function renderCompareRadar(players, size = 460) {
+    const n = STAT_LABELS.length;
+    const cx = size / 2, cy = size / 2, maxR = size * 0.32;
+    const levels = [0.25, 0.5, 0.75, 1];
+
+    const polar = (r, i) => {
+        const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+        return [cx + Math.cos(angle) * r, cy + Math.sin(angle) * r];
+    };
+
+    const gridPolygons = levels.map(l => {
+        const pts = Array.from({ length: n }, (_, i) => polar(maxR * l, i));
+        return `<polygon points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="#e5e7eb" stroke-width="1"/>`;
+    }).join('');
+
+    const axes = Array.from({ length: n }, (_, i) => {
+        const [x, y] = polar(maxR, i);
+        return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#e5e7eb" stroke-width="1"/>`;
+    }).join('');
+
+    const labelEls = STAT_LABELS.map((label, i) => {
+        const [x, y] = polar(maxR + 34, i);
+        const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+        const cos = Math.cos(angle);
+        const anchor = Math.abs(cos) < 0.25 ? 'middle' : cos > 0 ? 'start' : 'end';
+        return `<text x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle"
+            font-family="Inter,sans-serif" font-size="11.5" font-weight="600"
+            letter-spacing=".03em" fill="#4b5563">${esc(label)}</text>`;
+    }).join('');
+
+    const dataLayers = players.map(p => {
+        const pts = p.values.map((val, i) => {
+            const v = Math.min(100, Math.max(0, Number(val) || 0));
+            return polar((v / 100) * maxR, i);
+        });
+        const d = pts.map((pt, i) => (i === 0 ? 'M' : 'L') + pt[0] + ',' + pt[1]).join(' ') + ' Z';
+        const dots = pts.map((pt, i) => {
+            const val = Math.round(p.values[i] ?? 0);
+            return `<circle cx="${pt[0]}" cy="${pt[1]}" r="4.5"
+                fill="${p.color}" stroke="#fff" stroke-width="1.5"
+                data-radar-dot
+                data-player-name="${esc(p.name)}"
+                data-stat-name="${esc(STAT_LABELS[i])}"
+                data-stat-value="${val}"
+                data-color="${p.color}"
+                style="color:${p.color}"/>`;
+        }).join('');
+        return `
+            <path d="${d}" fill="${p.color}" fill-opacity="0.12"
+                  stroke="${p.color}" stroke-width="2" stroke-linejoin="round"/>
+            ${dots}
+        `;
+    }).join('');
+
+    return `<svg viewBox="0 0 ${size} ${size}" preserveAspectRatio="xMidYMid meet">
+        ${gridPolygons}${axes}${labelEls}${dataLayers}
+    </svg>`;
+}
+
+/* ============================================================
+   RADAR TOOLTIPS
+   ============================================================ */
+function getRadarTooltip() {
+    let t = document.getElementById('radarTooltip');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'radarTooltip';
+        document.body.appendChild(t);
+    }
+    return t;
+}
+
+function bindRadarTooltips() {
+    const wrap = document.getElementById('cmpRadarWrap');
+    if (!wrap) return;
+    const tooltip = getRadarTooltip();
+
+    const place = (e, refEl) => {
+        const rect = refEl.getBoundingClientRect();
+        let left = e.clientX;
+        let top  = e.clientY - rect.height - 10;
+        if (top < 8) top = e.clientY + 18;
+        if (left < 90) left = 90;
+        if (left > window.innerWidth - 90) left = window.innerWidth - 90;
+        tooltip.style.left = left + 'px';
+        tooltip.style.top  = top  + 'px';
+    };
+
+    wrap.querySelectorAll('[data-radar-dot]').forEach(dot => {
+        dot.addEventListener('mouseenter', e => {
+            const name  = dot.getAttribute('data-player-name');
+            const stat  = dot.getAttribute('data-stat-name');
+            const value = dot.getAttribute('data-stat-value');
+            const color = dot.getAttribute('data-color');
+            tooltip.innerHTML =
+                `<span class="tt-dot" style="background:${color}"></span>` +
+                `<span class="tt-name">${esc(name)}</span>` +
+                `<span class="tt-sep">·</span>` +
+                `${esc(stat)}: <b>${esc(value)}</b>`;
+            tooltip.classList.add('is-visible');
+            place(e, tooltip);
+        });
+        dot.addEventListener('mousemove', e => place(e, tooltip));
+        dot.addEventListener('mouseleave', () => {
+            tooltip.classList.remove('is-visible');
+        });
+    });
 }
 
 /* ============================================================
@@ -471,8 +582,15 @@ function updateCompareUI() {
     const n = state.selected.size;
 
     if (countEl) countEl.textContent = n;
-    if (n >= 1 && notice) notice.classList.remove('hidden');
-    else notice?.classList.add('hidden');
+
+    if (notice) {
+        if (n >= 1) notice.classList.remove('hidden');
+        else notice.classList.add('hidden');
+
+        // Делаем уведомление кликабельным только при 2+ игроках
+        if (n >= 2) notice.classList.add('is-clickable');
+        else notice.classList.remove('is-clickable');
+    }
 
     if (openBtn) {
         if (n >= 2) {
@@ -618,36 +736,102 @@ function bindPanelActions(player) {
 }
 
 /* ============================================================
-   TEST RESULTS FETCH (для раскрытия блоков сравнения)
+   TEST RESULTS FETCH
    ============================================================ */
 async function fetchPlayerTestResults(playerId, detail = null) {
-    // 1. Может прийти прямо в деталях игрока
+    // 1. Данные могут прийти прямо в деталях игрока
     if (detail?.results?.length)      return detail.results;
     if (detail?.test_results?.length) return detail.test_results;
+    if (detail?.tests?.length)        return detail.tests;
+    if (detail?.protocols?.length)    return detail.protocols;
+    if (detail?.scores?.length)       return detail.scores;
 
     // 2. Пробуем отдельные эндпоинты
     const endpoints = [
         `${API_BASE}/players/${playerId}/results`,
+        `${API_BASE}/players/${playerId}/tests`,
+        `${API_BASE}/players/${playerId}/protocols`,
         `${API_BASE}/results/?player_id=${playerId}&size=100`,
+        `${API_BASE}/test-results/?player_id=${playerId}&size=100`,
+        `${API_BASE}/protocols/?player_id=${playerId}&size=100`,
     ];
     for (const url of endpoints) {
         try {
             const res = await fetch(url);
             if (!res.ok) continue;
             const data = await res.json();
-            const items = data.items || data.results || data || [];
+            const items =
+                data.items ||
+                data.results ||
+                data.tests ||
+                data.protocols ||
+                data.scores ||
+                (Array.isArray(data) ? data : []);
             if (Array.isArray(items) && items.length) return items;
         } catch { /* ignore */ }
     }
     return [];
 }
 
-/* Группировка результатов по секции (английский ключ) */
+/* Нормализация ключа секции */
+function normalizeSectionKey(raw) {
+    if (!raw) return null;
+    const s = String(raw).trim().toLowerCase();
+
+    if (STAT_KEYS.includes(s)) return s;
+
+    // Точное совпадение с русским названием
+    for (const [key, ru] of Object.entries(SECTION_RU)) {
+        if (ru.toLowerCase() === s) return key;
+    }
+    // Частичное совпадение (в т.ч. "speed_test", "section_speed")
+    for (const [key, ru] of Object.entries(SECTION_RU)) {
+        if (s.includes(ru.toLowerCase()) || s.includes(key)) return key;
+    }
+    return null;
+}
+
+/* Определение секции по имени теста (fallback) */
+function guessSectionFromTestName(name) {
+    const s = String(name || '').toLowerCase();
+    if (!s) return null;
+    if (/антропометр|рост|вес|длина|масса|anthropometr|height|weight/i.test(s)) return 'anthropometry';
+    if (/атлети|athletic|физподготов|сила|прыжок в длину|strength/i.test(s))   return 'athleticism';
+    if (/быстр|speed|бег|спринт|sprint|30\s*м|15\s*м/i.test(s))                return 'speed';
+    if (/ловк|agility|координац|слалом|челночн/i.test(s))                        return 'agility';
+    if (/дрибл|dribbl|ведение|обводк/i.test(s))                                  return 'dribbling';
+    if (/техник|technique|пас|pass|жонгл|набив/i.test(s))                        return 'technique';
+    if (/удар|shot|бросок|гол|точность/i.test(s))                                return 'shots';
+    return null;
+}
+
+/* Группировка результатов по секции */
 function groupResultsBySection(results) {
     const map = {};
     for (const r of results) {
-        const raw = r.section || r.test_section || r.test?.section || '';
-        const key = STAT_KEYS.includes(raw) ? raw : RU_TO_KEY[raw] || null;
+        const rawSection =
+            r.section ||
+            r.test_section ||
+            r.test?.section ||
+            r.category ||
+            r.group ||
+            r.section_key ||
+            r.test?.category ||
+            null;
+
+        let key = normalizeSectionKey(rawSection);
+
+        // Если секция не определена — пробуем по имени теста
+        if (!key) {
+            const nameHint =
+                r.test_name ||
+                r.test?.name ||
+                r.name ||
+                r.test_code ||
+                '';
+            key = guessSectionFromTestName(nameHint);
+        }
+
         if (!key) continue;
         if (!map[key]) map[key] = [];
         map[key].push(r);
@@ -656,20 +840,20 @@ function groupResultsBySection(results) {
 }
 
 function extractTestName(r) {
-    return r.test_name || r.test?.name || r.name || 'Тест';
+    return r.test_name || r.test?.name || r.name || r.test_code || 'Тест';
 }
 function extractTestValue(r) {
-    const v = r.value ?? r.result ?? r.raw_value;
+    const v = r.value ?? r.result ?? r.raw_value ?? r.raw ?? r.measure;
     if (v == null) return '—';
     const n = Number(v);
     if (Number.isNaN(n)) return String(v);
     return n % 1 === 0 ? String(n) : n.toFixed(1);
 }
 function extractTestUnit(r) {
-    return r.unit || r.test?.unit || '';
+    return r.unit || r.test?.unit || r.unit_name || '';
 }
 function extractTestScore(r) {
-    const s = r.score ?? r.points ?? r.rating;
+    const s = r.score ?? r.points ?? r.rating ?? r.normalized;
     if (s == null) return null;
     const n = Number(s);
     if (Number.isNaN(n) || n < 0 || n > 100) return null;
@@ -677,7 +861,7 @@ function extractTestScore(r) {
 }
 
 /* ============================================================
-   COMPARE MODAL — cards + expandable indicator blocks
+   COMPARE MODAL — cards + radar + progress bars
    ============================================================ */
 async function openCompareModal() {
     if (state.selected.size < 2) return;
@@ -728,9 +912,25 @@ async function openCompareModal() {
         </div>
     `).join('');
 
-    /* ===== 2. Блоки по показателям ===== */
-    const blocksHTML = STAT_KEYS.map((key, si) => {
+    /* ===== 2. Радар-диаграмма (общая) ===== */
+    const radarPlayers = fullData.map(p => ({
+        name:   `${p.first_name} ${p.last_name}`,
+        color:  p._color,
+        values: STAT_KEYS.map(k => Math.round(p[k] ?? 0)),
+    }));
+
+    const legendHTML = fullData.map(p => `
+        <div class="cmp-legend__item">
+            <span class="cmp-legend__dot" style="background:${p._color}"></span>
+            <span>${esc(p.first_name)} ${esc(p.last_name)}</span>
+            <span class="cmp-legend__score">${Math.round(p.total_rating ?? 0)}</span>
+        </div>
+    `).join('');
+
+    /* ===== 3. Блоки по показателям (progress-bars + тесты) ===== */
+    const blocksHTML = STAT_KEYS.map((key) => {
         const label = SECTION_RU[key];
+
         const rowsHTML = fullData.map((p, i) => {
             const val = Math.round(p[key] ?? 0);
             return `
@@ -746,7 +946,7 @@ async function openCompareModal() {
             `;
         }).join('');
 
-        // Детали — результаты тестов внутри секции, сгруппированные по игроку
+        // Детализация тестов по игрокам
         const detailsHTML = fullData.map(p => {
             const list = p._grouped[key] || [];
             const testsHTML = list.length
@@ -806,14 +1006,23 @@ async function openCompareModal() {
     content.innerHTML = `
         <header class="compare-header">
             <h2>Сравнение игроков</h2>
-            <p>${n} ${pluralizePlayers(n)} · нажмите на показатель, чтобы увидеть детализацию по тестам</p>
+            <p>${n} ${pluralizePlayers(n)} · наведите на точку диаграммы или раскройте показатель ниже</p>
         </header>
 
         <section class="compare-cards">${cardsHTML}</section>
+
+        <section class="cmp-radar-wrap" id="cmpRadarWrap">
+            <div class="cmp-radar">
+                ${renderCompareRadar(radarPlayers, 460)}
+            </div>
+            <div class="cmp-legend">${legendHTML}</div>
+        </section>
+
         <section class="compare-indicators">${blocksHTML}</section>
     `;
 
     bindCompareBlocks();
+    bindRadarTooltips();
 }
 
 function pluralizePlayers(n) {
@@ -846,6 +1055,10 @@ function closeCompareModal() {
     modal?.setAttribute('aria-hidden', 'true');
     if (content) content.innerHTML = '';
     document.body.style.overflow = '';
+
+    // Скрываем tooltip диаграммы
+    const tooltip = document.getElementById('radarTooltip');
+    if (tooltip) tooltip.classList.remove('is-visible');
 }
 
 /* ============================================================
@@ -994,13 +1207,24 @@ function bindFilters() {
     on('ageFilter',    'change', e => { state.filters.age    = e.target.value; state.page = 1; loadPlayers(); });
     on('genderFilter', 'change', e => { state.filters.gender = e.target.value; state.page = 1; loadPlayers(); });
     on('sortFilter',   'change', e => { state.filters.sort   = e.target.value; state.page = 1; loadPlayers(); });
-    on('clearCompare', 'click', () => {
+
+    // Клик по уведомлению: открывает сравнение (при 2+), либо кнопку очистки
+    const notice = document.getElementById('compareNotice');
+    if (notice) {
+        notice.addEventListener('click', (e) => {
+            if (e.target.closest('#clearCompare')) return; // своя кнопка
+            if (state.selected.size >= 2) openCompareModal();
+        });
+    }
+
+    // Кнопка "Очистить"
+    on('clearCompare', 'click', (e) => {
+        e.stopPropagation();
         state.selected.clear();
         updateCompareUI();
         loadPlayers();
         closeCompareModal();
     });
-    on('openCompare', 'click', openCompareModal);
 }
 
 function bindGrid() {
