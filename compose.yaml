@@ -9,6 +9,7 @@ volumes:
 # Общее для всех контейнеров - указываем сеть internal, env_file: .env и правила для логирования
 x-container:
   &base-container
+  restart: unless-stopped
   networks:
     - internal
   env_file:
